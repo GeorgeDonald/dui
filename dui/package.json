@@ -1,0 +1,13 @@
+{
+  "name": "dui",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dui.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "George S. Dong",
+  "license": "MIT",
+  "dependencies": {
+  }
+}
