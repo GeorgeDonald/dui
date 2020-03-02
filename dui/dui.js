@@ -22,6 +22,7 @@
 
     var document = window.document;
     var version = "0.0.1";
+    var help = {};
 
     ////////////////////////////////////////////////////////////////////
     // counstants
@@ -194,8 +195,11 @@
 
     ////////////////////////////////////////////////////////////////////
     // functions
+
+    // log
+    // localized version of console.log for simplification
     function log(msg) {
-        let e = new Error();
+        var e = new Error();
         if (!e.stack) {
             try {
                 throw e;
@@ -203,7 +207,7 @@
             }
         }
         if (e.stack) {
-            let stack = e.stack.toString().split(/\r\n|\n/);
+            var stack = e.stack.toString().split(/\r\n|\n/);
             if (stack.length > 2) {
                 msg += "\n" + stack.splice(2).join("\n");
             }
@@ -211,9 +215,14 @@
         console.log(msg);
     }
 
+    help.toNumber = `
+    toNumber(x: string)
+        convert string to float
+        x: string that include digits
+    `
     function toNumber(x) {
         if (typeof x == 'string') {
-            let rer = /(\d+\.*\d*)/g.exec(x);
+            var rer = /(\d+\.*\d*)/g.exec(x);
             if (!rer) return 0;
             x = parseFloat(rer[1]);
         }
@@ -221,119 +230,190 @@
         return x;
     }
 
+    help.swap = `
+    swap(object, member1: string, member2: string)
+        swap two member variables of a object
+        object: object width some members
+        member1: name of first member variable to swap
+        member2: name of second member variable to swap
+    `
     function swap(obj, m1, m2) {
-        let t = obj[m1];
+        var t = obj[m1];
         obj[m1] = obj[m2];
         obj[m2] = t;
     }
 
-    function equals(names, obj1, obj2) {
-        if (!obj1 || !obj2) {
-            try {
-                return obj1 == obj2;
-            } catch (error) {
-                log(error);
-                return false;
-            }
+    help.equals = `
+    equals(object1, object2, member_name_array)
+        compare members of object1 and object2 whose names are in member_name_array
+        if member_name_array is undefined, then compares all members
+    `
+    function equals(obj1, obj2, names) {
+        if (!obj1 || !obj2 || !(obj1 instanceof Object) || !(obj2 instanceof Object)) return obj1 == obj2;
+        if(!names || (!(typeof names == "number" || typeof names == "string") && !(names instanceof Array))){
+            var names1 = Object.keys(obj1);
+            var names2 = Object.keys(obj2);
+            if(names1.length != names2.length) return false;
+            if(names1.length == 0 && names2.length == 0) return obj1 == obj2;
+            if(!names1.every((v, i) => equals(v, names2[i]))) return false;
+            names = names1;
+        } else if(typeof names == "number" || typeof names == "string"){
+            names = [names];
         }
-        return names.every(v => obj1[v] == obj2[v]);
+        return names.every(v => equals(obj1[v], obj2[v]));
     }
 
-    function equalsTo(names, obj1) {
-        let args = Array.from(arguments).splice(2);
-        args.unshift(names);
-        let t = toNumberObject.apply(null, args);
-        return equals(names, obj1, t);
-    }
-
-    function toNumberObject(names) {
-        if (!(names instanceof Object) || !(names instanceof Array)) {
-            throw new Error("Exception occured in toNumberObject function: argument names is not an Array")
-        }
-        if (names.length < 2) {
-            throw new Error("Exception occured in toNumberObject function: elements argument names are less than 2")
-        }
-
-        let obj = {};
-        if (arguments[1] instanceof Object) {
-            let temp = arguments[1];
-            if (!(arguments[1] instanceof Array)) {
+    help.toNumberObject = `
+    toNumberObject(names: array, ...args)
+        convert a sequence of stings or numbers to a object width keys named in names
+        example: 
+            toNumberObject(["a", "b"], 10, 11) returns {a: 10, b: 11}
+            toNumberObject(['a', 'b'], [10, 11]) returns {a: 10, b: 11}
+            toNumberObject(['a', 'b'], {a: 10, b: 11, c: 12}) returns {a: 10, b: 11}
+    `
+    function toNumberObject(names, ...args) {
+        var obj = {};
+        if (args[0] instanceof Object) {
+            var temp = args[0];
+            if (!(args[0] instanceof Array)) {
                 names.forEach((v, i) => {
-                    arguments[i + 1] = temp[v];
+                    args[i] = temp[v];
                 });
             } else {
                 names.forEach((v, i) => {
-                    arguments[i + 1] = temp[i];
+                    args[i] = temp[i];
                 });
             }
         }
 
         names.forEach((v, i) => {
-            obj[v] = toNumber(arguments[i + 1]);
+            obj[v] = toNumber(args[i]);
         });
 
-        obj.toString = () => {
-            return "{" + names.map(v => `${v}: ${obj[v]}`).join(", ") + "}";
-        }
-
         return obj;
+    }
+
+    help.equalsTo = `
+    equalsTo
+        compare members of obj1 whose names are in parameter names to a sequence of variables
+        examples:
+            equalsTo(['a', 'b'], {a: 10, b: 20}, 10, 20) return true
+    `
+    function equalsTo(names, obj1, ...args) {
+        args.unshift(names);
+        var t = toNumberObject.apply(null, args);
+        return equals(obj1, t, names);
     }
     ////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////
     // basic classes
+
+    help.Point = `
+    class Point
+        represents a (x, y) pair
+        constructor(x: number or number string or Point or object like {x: 1, y: 2}, y: optional, number or number string)
+        offset(x: number or Point, y: optional number)
+            move Point to (Point.x + x, Point.y + y)
+    `
     class Point {
         constructor(x, y) {
-            let t = toNumberObject(["x", "y"], x, y);
+            var t = toNumberObject(["x", "y"], x, y);
             this.x = t.x;
             this.y = t.y;
         }
         offset(x, y) {
-            let t = toNumberObject(["x", "y"], x, y);
+            var t = toNumberObject(["x", "y"], x, y);
             this.x += t.x;
             this.y += t.y;
+            return this;
         }
         equals(x, y) {
             return equalsTo(['x', 'y'], this, x, y);
+        }
+        static New(x, y){
+            return new Point(x, y);
         }
     }
 
     class Position extends Point { }
 
+    help.Size = `
+    class Size
+        represents (width, height) pair
+        constructor(width: number or number string or Point or object like {x: 1, y: 2}, height: optional number or number string)
+        add(width: number or Size, y: optional number)
+            add width and height to this.width and this.height saperately
+        normalize:
+            make sure width and height are positive. if not, change it to it's absolute value
+    `
     class Size {
         constructor(width, height) {
-            let t = toNumberObject(["width", "height"], width, height);
+            var t = toNumberObject(["width", "height"], width, height);
             this.width = t.width;
             this.height = t.height;
         }
         add(width, height) {
-            let t = toNumberObject(["width", "height"], width, height);
+            var t = toNumberObject(["width", "height"], width, height);
             this.width += t.width;
             this.height += t.height;
+            return this;
         }
         normalize() {
             if (this.width < 0) this.width = -this.width;
             if (this.height < 0) this.height = -this.height;
+            return this;
         }
         equals(width, height) {
             return equalsTo(["width", "height"], this, width, height);
         }
+        static New(width, height){
+            return new Size(width, height);
+        }
     }
 
-    class Rect {
+    help.Quad = `
+    class Quad
+        represents (left, top, right, bottom)
+        constructor(left: number or Rect, top: optional number, right, bottom)
+    `
+    class Quad{
         constructor(l, t, r, b) {
-            let t1 = toNumberObject(["left", "top", "right", "bottom"], l, t, r, b);
+            var t1 = toNumberObject(["left", "top", "right", "bottom"], l, t, r, b);
             this.left = t1.left;
             this.top = t1.top;
             this.right = t1.right;
             this.bottom = t1.bottom;
             if (l.width != undefined || l.height != undefined) {
-                let t2 = toNumberObject(["left", "top", "width", "height"], l, t, r, b);
+                var t2 = toNumberObject(["left", "top", "width", "height"], l, t, r, b);
                 if (l.width != undefined) this.right = this.left + t2.width;
                 if (l.height != undefined) this.bottom = this.top + t2.height;
             }
         }
 
+        add(left, top, right, bottom) {
+            var t = toNumberObject(["left", "top", "right", "bottom"], left, top, right, bottom);
+            this.left += t.left;
+            this.top += t.top;
+            this.right += t.right;
+            this.bottom += t.bottom;
+            return this;
+        }
+
+        equals(left, top, right, bottom) {
+            return equals(["left", "top", "right", "bottom"], this, new Rect(left, top, right, bottom));
+        }
+
+        static New(left, top, right, bottom){
+            return new Quad(left, top, right, bottom);
+        }
+    }
+
+    help.Rect = `
+    class Rect
+        represents a rect of two points: (left, top) and (right, bottom)
+    `
+    class Rect extends Quad {
         get width() {
             return this.right - this.left;
         }
@@ -349,43 +429,42 @@
             if (this.top > this.bottom) {
                 swap(this, "top", "bottom");
             }
+            return this;
         }
 
         offset(x, y) {
-            let t = toNumberObject(["x", "y"], x, y);
+            var t = toNumberObject(["x", "y"], x, y);
             this.left += t.x;
             this.right += t.x;
             this.top += t.y;
             this.bottom += t.y;
+            return this;
         }
 
-        add(width, height) {
-            let t = toNumberObject(["width", "height"], width, height);
+        extend(width, height) {
+            var t = toNumberObject(["width", "height"], width, height);
             if (this.left <= this.right) this.right += t.width;
             else this.left -= t.width;
 
             if (this.top <= this.bottom) this.bottom += t.height;
             else this.top -= t.height;
+            return this;
         }
 
-        extend(left, top, right, bottom) {
-            let t = toNumberObject(["left", "top", "right", "bottom"], left, top, right, bottom);
-            this.left += t.left;
-            this.top += t.top;
-            this.right += t.right;
-            this.bottom += t.bottom;
-        }
-
-        equals(left, top, right, bottom) {
-            return equals(["left", "top", "right", "bottom"], this, new Rect(left, top, right, bottom));
+        static New(left, top, right, bottom){
+            return new Rect(left, top, right, bottom);
         }
     }
 
+    help.Color = `
+    class Color
+        represents a color: (red, green, blue, alpha)
+    `
     class Color {
         static GetColorValue(c) {
             if (typeof c == "string") {
-                let re = /^\s*#([0-9a-fA-F]{1,2})\s*$/g;
-                let rlt = re.exec(c);
+                var re = /^\s*#([0-9a-fA-F]{1,2})\s*$/g;
+                var rlt = re.exec(c);
                 if (rlt && rlt.length == 2) {
                     return parseInt(rlt[1], 16);
                 } else c = parseInt(c);
@@ -407,8 +486,8 @@
             if(red == undefined || red == null) return;
 
             if (typeof red == "string") {
-                let re = /^\s*#{0,1}([0-9a-fA-F]{2,8})\s*$/g;
-                let rlt = re.exec(red);
+                var re = /^\s*#{0,1}([0-9a-fA-F]{2,8})\s*$/g;
+                var rlt = re.exec(red);
                 if (rlt && rlt.length == 2) {
                     if (rlt[1].length == 2) rlt[1] = rlt[1] + rlt[1] + rlt[1];
                     else if (rlt[1].length == 3) rlt[1] = rlt[1] + rlt[1].split("").reverse().join("");
@@ -424,11 +503,11 @@
                     this._blue = parseInt(rlt[1].substring(6), 16);
                     return;
                 } else {
-                    let re = /^rgba*\((\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),*\s*(\d*\.*\d*)\)$/g;
-                    let rlt = re.exec(red);
+                    var re = /^rgba*\((\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),*\s*(\d*\.*\d*)\)$/g;
+                    var rlt = re.exec(red);
                     if (rlt && rlt.length == 5) {
-                        rlt[4] = rlt[4] == "" ? window.getComputedStyle(this.element).opacity : rlt[4];
-                        for (let i = 1; i < 5; i++) {
+                        if(rlt[4] == "") rlt[4] = "1";
+                        for (var i = 1; i < 5; i++) {
                             rlt[i] = parseFloat(rlt[i]);
                         }
                         this._red = rlt[1];
@@ -437,18 +516,19 @@
                         this._alpha = rlt[4];
                         return;
                     } else {
-                        let clr = Color.predefinedColors[red.toLowerCase()];
+                        var clr = Color.predefinedColors[red.toLowerCase()];
                         if (clr) {
                             this._red = clr[0];
                             this._green = clr[1];
                             this._blue = clr[2];
+                            this._alpha = 1;
                             return;
                         }
                     }
                 }
             }
 
-            let t = toNumberObject(["red", "green", "blue", "alpha"], red, green, blue, alpha);
+            var t = toNumberObject(["red", "green", "blue", "alpha"], red, green, blue, alpha);
 
             this._red = t.red;
             this._green = t.green;
@@ -460,7 +540,7 @@
             return this._red;
         }
         get r() {
-            return this.red;
+            return this._red;
         }
         set red(r) {
             this._red = Color.GetColorValue(r);
@@ -472,7 +552,7 @@
             return this._green;
         }
         get g() {
-            return this.green;
+            return this._green;
         }
         set green(g) {
             this._green = Color.GetColorValue(g);
@@ -484,7 +564,7 @@
             return this._blue;
         }
         get b() {
-            return this.blue;
+            return this._blue;
         }
         set blue(b) {
             this._blue = Color.GetColorValue(b);
@@ -496,7 +576,7 @@
             return this._alpha;
         }
         get a() {
-            return this.alpha;
+            return this._alpha;
         }
         set alpha(a) {
             this._alpha = Color.GetColorValue(a > 1 ? 1 : a < 0 ? 0 : a);
@@ -504,8 +584,8 @@
         set a(a) {
             this.alpha = a;
         }
-        Equals(other) {
-            return equalsTo(['red', 'green', 'blue', 'alpha'], this, other);
+        equals(...other) {
+            return equalsTo(['red', 'green', 'blue', 'alpha'], this, Color.New.apply(null, other));
         }
     }
 
@@ -518,10 +598,10 @@
             if(width == null || width == undefined) return;
 
             if (typeof width == "string") {
-                let ss = width.split(" ");
+                var ss = width.split(" ");
                 ss = ss.filter(v => v != "");
                 if (ss.length == 3) {
-                    for (let s of ss) {
+                    for (var s of ss) {
                         if (styles.includes(s)) style = s;
                         else if (Color.predefinedColors.includes(s)) color = s;
                         else if (/^#\d+[0-9A-Fa-f]*$/g.text(s)) color = s;
@@ -531,7 +611,7 @@
                 }
             }
             if (styles.includes(style)) this._lineStyle = style;
-            let m = domWnd.Metric(width, this._unit);
+            var m = domWnd.Metric(width, this._unit);
             this._width = m.value;
             this._unit = m.unit;
             if (color) {
@@ -557,7 +637,7 @@
                 this._lineStyle = s;
         }
         set width(width) {
-            let m = domWnd.Metric(width, this._unit);
+            var m = domWnd.Metric(width, this._unit);
             _width = m.value;
             _unit = m.unit;
         }
@@ -578,7 +658,7 @@
 
     class domPage {
         static New() {
-            let p = new domPage();
+            var p = new domPage();
             p.Init();
             return p;
         }
@@ -593,7 +673,7 @@
         }
 
         get newId() {
-            let id = this._idCounter;
+            var id = this._idCounter;
             this._idCounter++;
             return id.toString();
         }
@@ -686,22 +766,22 @@
             return this.element.clientHeight;
         }
         get rect() {
-            let ele = this.element;
+            var ele = this.element;
             return new Rect({ left: ele.clientLeft, top: ele.clientTop, width: ele.clientWidth, height: ele.clientHeight });
         }
         get position() {
-            let ele = this.element;
+            var ele = this.element;
             return new Position(ele.clientLeft, ele.clientTop);
         }
         static Metric(desc, defaultUnit) {
-            let value;
-            let unit;
+            var value;
+            var unit;
             if (typeof desc == "number") {
                 value = desc;
                 unit = defaultUnit;
             } else {
-                let re = /^\s*(\-*\d+\.*\d*)([a-zA-Z]*)\s*$/g;
-                let rs = re.exec(desc);
+                var re = /^\s*(\-*\d+\.*\d*)([a-zA-Z]*)\s*$/g;
+                var rs = re.exec(desc);
                 if (!rs || rs.length != 3) return null;
                 if (rs[2] == "") rs[2] = this.page.unit;
                 else if (!domPage.Units().includes(rs[2])) null;
@@ -711,17 +791,17 @@
             return { value, unit, descript: `${value}${unit}` }
         }
         set width(width) {
-            let m = domWnd.Metric(width, this.page.unit);
+            var m = domWnd.Metric(width, this.page.unit);
             if (!m) return;
             this.element.style.width = m.descript;
         }
         set height(height) {
-            let m = domWnd.Metric(height, this.page.unit);
+            var m = domWnd.Metric(height, this.page.unit);
             if (!m) return;
             this.element.style.height = m.descript;
         }
         GetColor(attr) {
-            let bc = window.getComputedStyle(this.element)[attr];
+            var bc = window.getComputedStyle(this.element)[attr];
             return Color.New(bc);
         }
         get bgdClr() {
@@ -734,17 +814,17 @@
 
         }
         SetColor(attr, clr) {
-            let args = Array.from(arguments).splice(1);
+            var args = Array.from(arguments).splice(1);
             clr = Color.New.apply(null, args);
             this.element.style[attr] = `rgba(${clr.r}, ${clr.g}, ${clr.b}, ${clr.a})`
         }
         set bgdClr(clr) {
-            let args = Array.from(arguments);
+            var args = Array.from(arguments);
             args.unshift("backgroundColor")
             this.SetColor.apply(this, args);
         }
         set txtClr(clr) {
-            let args = Array.from(arguments);
+            var args = Array.from(arguments);
             args.unshift("color")
             this.SetColor.apply(this, args);
         }
@@ -784,7 +864,7 @@
             }
 
             Object.keys(attributes).forEach(attr => {
-                let setter = this.constructor.prototype.__lookupSetter__(attr);
+                var setter = this.constructor.prototype.__lookupSetter__(attr);
                 if (setter == undefined) {
                     log(`Attribute "${attr} is not defined in ${this.constructor.name}"`);
                     return;
@@ -810,11 +890,11 @@
 
             this._page = parent.page;
             this._id = this.page.newId;
-            let thisElement = document.createElement(this._tag);
+            var thisElement = document.createElement(this._tag);
             thisElement.id = this._id;
             thisElement.style.position = "relative";
 
-            let parentElement = document.getElementById(parent.id);
+            var parentElement = document.getElementById(parent.id);
             parentElement.appendChild(thisElement);
 
             return parent.AddChild(this)
@@ -840,7 +920,7 @@
             return new wnd();
         }
         static CreateNew(parent, wnd = domWnd) {
-            let nw = new wnd();
+            var nw = new wnd();
             if (nw.Create(parent)) return nw;
 
             return null;
@@ -860,10 +940,65 @@
 
     }
 
-    dui.version = version;
-    dui.log = log;
-    dui.toNumber = toNumber;
+    class Assert{
+        constructor(name){
+            this.name = name;
+            console.log(`dui version: ${version}\nStart testing ${name}`);
+            console.log(help[name]);
+        }
+        NotNull(t){
+            if(t == null || t == undefined) throw new Error("Should not be null or undefined");
+        }
+        True(t){
+            if(!t) throw new Error("Should be true");
+        }
+        False(t){
+            if(t) throw new Error("Should not be true");
+        }
+        Equals(value, expected){
+            if(!equals(value, expected)) throw new Error("Should be equal");
+        }
+        NotEquals(value, expected){
+            if(equals(value, expected)) throw new Error("Should be equal");
+        }
+        ShouldThrowError(func){
+            var args = Array.from(arguments);
+            args.shift();
+            try{
+                func.apply(null, args);
+            }catch(error){ return }
+            throw new Error("Should throw an error");
+        }
+        Done(){
+            console.log(`Test of "${this.name}" finished successfully !!!\n`);
+        }
+    }
 
+    dui.version = version;
+    dui.help = help;
+    dui.log = log;
+    dui.Assert = Assert;
+    dui.test = test;
+
+    dui.toNumber = toNumber;
+    dui.swap = swap;
+    dui.equals = equals;
+    dui.toNumberObject = toNumberObject;
+    dui.equalsTo = equalsTo;
+
+    dui.Point = Point;
+    dui.Position = Position;
+    dui.Size = Size;
+    dui.Quad = Quad;
+    dui.Rect = Rect;
+    dui.Color = Color;
+    
+    function test(name, func){
+        var assert = new Assert(name);
+        func(assert);
+        assert.Done();
+    }
+    
     if (!noGlobal) {
         window.dui = dui;
     }
