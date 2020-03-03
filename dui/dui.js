@@ -961,10 +961,15 @@
     ////////////////////////////////////////////////////////////////////
 
 
+    help.Page = `
+    class Page
+        represents html
+        init: create main wnd attached to body
+    `
     class Page {
         static New() {
             var p = new Page();
-            p.Init();
+            p.init();
             return p;
         }
         static IsPageValid(page) {
@@ -983,7 +988,7 @@
             return id.toString();
         }
 
-        Init() {
+        init() {
             document.body.id = this.newId;
             this._mainWnd = new Wnd(this);
             this._mainWnd.Create(null);
@@ -1037,7 +1042,7 @@
         // a wnd must be belong to a page
         constructor(page = null, tag = "div") {
             this._id = "0";
-            this._page = null;
+            this._page = page;
             this._parent = null;
             this._children = {};
             this._zorder = [];
@@ -1079,12 +1084,12 @@
             return new Position(ele.clientLeft, ele.clientTop);
         }
         set width(width) {
-            var m = Wnd.Metric(width, this.page.unit);
+            var m = metric(width, this.page.unit);
             if (!m) return;
             this.element.style.width = m.descript;
         }
         set height(height) {
-            var m = Wnd.Metric(height, this.page.unit);
+            var m = metric(height, this.page.unit);
             if (!m) return;
             this.element.style.height = m.descript;
         }

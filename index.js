@@ -213,5 +213,16 @@ test("Lateral", assert => {
     assert.True(l.equals("2mm", "groove", "#BA55D3"));
 });
 
+test("Page", assert => {
+    let Page = dui.Page;
+    let Wnd = dui.Wnd;
+
+    let page = Page.New();
+    let mainWnd = page.mainWnd;
+    let child1 = Wnd.CreateNew(mainWnd);
+    child1.width = "80px";
+    let width = window.getComputedStyle(child1.element).width;
+    assert.Equals(child1.width, 80);
+});
 console.log("✌️✌️✌️ All tests finished successfully !!!!!! ✌️✌️✌️")
 
