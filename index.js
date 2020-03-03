@@ -1,11 +1,11 @@
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
-const { window } = new JSDOM();
-const { document } = (new JSDOM('<!DOCTYPE html><html><head></head><body></body></html>')).window;
-global.document = document;
+const { window } = new JSDOM('<!DOCTYPE html><html><head></head><body></body></html>');
+global.document = window;
 
 let dui = require("dui")(window);
 let test = dui.test;
+let document = window.document;
 
 test("toNumber", (assert) => {
     assert.Equals(dui.toNumber("10"), 10);
@@ -220,11 +220,21 @@ test("Page", assert => {
     let page = Page.New();
     let mainWnd = page.mainWnd;
     let child1 = Wnd.CreateNew(mainWnd);
+    assert.NotNull(document.getElementById(child1.id));
     assert.True(child1.element);
     assert.Equals(child1.element.tagName, "DIV");
     child1.width = "80px";
-    let width = window.getComputedStyle(child1.element).width;
     assert.Equals(child1.width, '80px');
+    child1.height = "120px";
+    assert.Equals(child1.height, "120px");
+    child1.bgdClr = "yellow";
+    assert.NotNull(child1.bgdClr.name);
+    assert.Equals(child1.bgdClr.name.toLowerCase(), "yellow");
+
+    child1.Destroy();
+    assert.IsNull(document.getElementById(child1.id))
+    assert.IsNull(child1.element);
 });
+
 console.log("✌️✌️✌️ All tests finished successfully !!!!!! ✌️✌️✌️")
 

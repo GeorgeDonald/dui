@@ -1218,6 +1218,31 @@
 
             return null;
         }
+
+        set top(top){
+            let t = metric(top, this.path.unit);
+            this.element.style.top = t.descript;
+        }
+
+        set left(left){
+            let t = metric(top, this.path.unit);
+            this.element.style.top = t.descript;
+        }
+
+        set pos(pos){
+            pos = new Position(pos);
+            this.left = pos.x;
+            this.top = pos.y;
+        }
+        
+        layout(options){
+            let left = 0;
+            this._children.forEach(child => {
+                child.left = left;
+                child.top = 0;
+                left+=child.width;
+            });
+        }
     }
 
     class Div extends Wnd {
@@ -1238,6 +1263,9 @@
             this.name = name;
             console.log(`dui version: ${version}\nStart testing ${name}`);
             console.log(help[name]);
+        }
+        IsNull(t){
+            if(t) throw new Error("Should be null");
         }
         NotNull(t){
             if(t == null || t == undefined) throw new Error("Should not be null or undefined");
