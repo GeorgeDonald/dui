@@ -220,9 +220,11 @@ test("Page", assert => {
     let page = Page.New();
     let mainWnd = page.mainWnd;
     let child1 = Wnd.CreateNew(mainWnd);
+    assert.True(child1.element);
+    assert.Equals(child1.element.tagName, "DIV");
     child1.width = "80px";
     let width = window.getComputedStyle(child1.element).width;
-    assert.Equals(child1.width, 80);
+    assert.Equals(child1.width, '80px');
 });
 console.log("✌️✌️✌️ All tests finished successfully !!!!!! ✌️✌️✌️")
 

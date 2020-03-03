@@ -1046,7 +1046,7 @@
             this._parent = null;
             this._children = {};
             this._zorder = [];
-            this._elementTag = tag;
+            this._tag = tag;
         }
 
 
@@ -1070,10 +1070,10 @@
             return document.getElementById(this.id);
         }
         get width() {
-            return this.element.clientWidth;
+            return window.getComputedStyle(this.element).width;
         }
         get height() {
-            return this.element.clientHeight;
+            return window.getComputedStyle(this.element).height;
         }
         get rect() {
             var ele = this.element;
