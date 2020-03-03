@@ -176,22 +176,176 @@
         yellow: [255, 255, 0, 1],
         yellowgreen: [154, 205, 50, 1],
     }
-    const namedLineStyles = [
-        'dotted',
-        'dashed',
-        'solid',
-        'double',
-        'groove',
-        'ridge',
-        'inset',
-        'outset',
-        'none',
-        'hidden',
-    ];
-    const units = [
-        'cm', 'mm', 'in', 'px', 'pt', 'pc',
-        'em', 'ex', 'ch', 'rem', 'vw', 'vh', 'vmin', 'vmax', '%'
-    ]
+    var hexColorNames = {
+        "#F0F8FF": "AliceBlue",
+        "#FAEBD7": "AntiqueWhite",
+        "#00FFFF": "Aqua",
+        "#7FFFD4": "Aquamarine",
+        "#F0FFFF": "Azure",
+        "#F5F5DC": "Beige",
+        "#FFE4C4": "Bisque",
+        "#000000": "Black",
+        "#FFEBCD": "BlanchedAlmond",
+        "#0000FF": "Blue",
+        "#8A2BE2": "BlueViolet",
+        "#A52A2A": "Brown",
+        "#DEB887": "BurlyWood",
+        "#5F9EA0": "CadetBlue",
+        "#7FFF00": "Chartreuse",
+        "#D2691E": "Chocolate",
+        "#FF7F50": "Coral",
+        "#6495ED": "CornflowerBlue",
+        "#FFF8DC": "Cornsilk",
+        "#DC143C": "Crimson",
+        "#00008B": "DarkBlue",
+        "#008B8B": "DarkCyan",
+        "#B8860B": "DarkGoldenRod",
+        "#A9A9A9": "DarkGrey",
+        "#006400": "DarkGreen",
+        "#BDB76B": "DarkKhaki",
+        "#8B008B": "DarkMagenta",
+        "#556B2F": "DarkOliveGreen",
+        "#FF8C00": "DarkOrange",
+        "#9932CC": "DarkOrchid",
+        "#8B0000": "DarkRed",
+        "#E9967A": "DarkSalmon",
+        "#8FBC8F": "DarkSeaGreen",
+        "#483D8B": "DarkSlateBlue",
+        "#2F4F4F": "DarkSlateGrey",
+        "#00CED1": "DarkTurquoise",
+        "#9400D3": "DarkViolet",
+        "#FF1493": "DeepPink",
+        "#00BFFF": "DeepSkyBlue",
+        "#696969": "DimGrey",
+        "#1E90FF": "DodgerBlue",
+        "#B22222": "FireBrick",
+        "#FFFAF0": "FloralWhite",
+        "#228B22": "ForestGreen",
+        "#FF00FF": "Fuchsia",
+        "#DCDCDC": "Gainsboro",
+        "#F8F8FF": "GhostWhite",
+        "#FFD700": "Gold",
+        "#DAA520": "GoldenRod",
+        "#808080": "Grey",
+        "#008000": "Green",
+        "#ADFF2F": "GreenYellow",
+        "#F0FFF0": "HoneyDew",
+        "#FF69B4": "HotPink",
+        "#CD5C5C": "IndianRed",
+        "#4B0082": "Indigo",
+        "#FFFFF0": "Ivory",
+        "#F0E68C": "Khaki",
+        "#E6E6FA": "Lavender",
+        "#FFF0F5": "LavenderBlush",
+        "#7CFC00": "LawnGreen",
+        "#FFFACD": "LemonChiffon",
+        "#ADD8E6": "LightBlue",
+        "#F08080": "LightCoral",
+        "#E0FFFF": "LightCyan",
+        "#FAFAD2": "LightGoldenRodYellow",
+        "#D3D3D3": "LightGrey",
+        "#90EE90": "LightGreen",
+        "#FFB6C1": "LightPink",
+        "#FFA07A": "LightSalmon",
+        "#20B2AA": "LightSeaGreen",
+        "#87CEFA": "LightSkyBlue",
+        "#778899": "LightSlateGrey",
+        "#B0C4DE": "LightSteelBlue",
+        "#FFFFE0": "LightYellow",
+        "#00FF00": "Lime",
+        "#32CD32": "LimeGreen",
+        "#FAF0E6": "Linen",
+        "#800000": "Maroon",
+        "#66CDAA": "MediumAquaMarine",
+        "#0000CD": "MediumBlue",
+        "#BA55D3": "MediumOrchid",
+        "#9370DB": "MediumPurple",
+        "#3CB371": "MediumSeaGreen",
+        "#7B68EE": "MediumSlateBlue",
+        "#00FA9A": "MediumSpringGreen",
+        "#48D1CC": "MediumTurquoise",
+        "#C71585": "MediumVioletRed",
+        "#191970": "MidnightBlue",
+        "#F5FFFA": "MintCream",
+        "#FFE4E1": "MistyRose",
+        "#FFE4B5": "Moccasin",
+        "#FFDEAD": "NavajoWhite",
+        "#000080": "Navy",
+        "#FDF5E6": "OldLace",
+        "#808000": "Olive",
+        "#6B8E23": "OliveDrab",
+        "#FFA500": "Orange",
+        "#FF4500": "OrangeRed",
+        "#DA70D6": "Orchid",
+        "#EEE8AA": "PaleGoldenRod",
+        "#98FB98": "PaleGreen",
+        "#AFEEEE": "PaleTurquoise",
+        "#DB7093": "PaleVioletRed",
+        "#FFEFD5": "PapayaWhip",
+        "#FFDAB9": "PeachPuff",
+        "#CD853F": "Peru",
+        "#FFC0CB": "Pink",
+        "#DDA0DD": "Plum",
+        "#B0E0E6": "PowderBlue",
+        "#800080": "Purple",
+        "#663399": "RebeccaPurple",
+        "#FF0000": "Red",
+        "#BC8F8F": "RosyBrown",
+        "#4169E1": "RoyalBlue",
+        "#8B4513": "SaddleBrown",
+        "#FA8072": "Salmon",
+        "#F4A460": "SandyBrown",
+        "#2E8B57": "SeaGreen",
+        "#FFF5EE": "SeaShell",
+        "#A0522D": "Sienna",
+        "#C0C0C0": "Silver",
+        "#87CEEB": "SkyBlue",
+        "#6A5ACD": "SlateBlue",
+        "#708090": "SlateGrey",
+        "#FFFAFA": "Snow",
+        "#00FF7F": "SpringGreen",
+        "#4682B4": "SteelBlue",
+        "#D2B48C": "Tan",
+        "#008080": "Teal",
+        "#D8BFD8": "Thistle",
+        "#FF6347": "Tomato",
+        "#40E0D0": "Turquoise",
+        "#EE82EE": "Violet",
+        "#F5DEB3": "Wheat",
+        "#FFFFFF": "White",
+        "#F5F5F5": "WhiteSmoke",
+        "#FFFF00": "Yellow",
+        "#9ACD32": "YellowGreen",
+    }
+    const lineStyles = {
+        dotted: 'dotted',
+        dashed: 'dashed',
+        solid: 'solid',
+        double: 'double',
+        groove: 'groove',
+        ridge: 'ridge',
+        inset: 'inset',
+        outset: 'outset',
+        none: 'none',
+        hidden: 'hidden',
+    }
+    const units = {
+        cm: 'cm', 
+        mm: 'mm', 
+        in: 'in', 
+        px: 'px', 
+        pt: 'pt', 
+        pc: 'pc',
+        em: 'em', 
+        ex: 'ex', 
+        ch: 'ch', 
+        rem: 'rem', 
+        vw: 'vw', 
+        vh: 'vh', 
+        vmin: 'vmin', 
+        vmax: 'vmax', 
+        '%': '%'
+    }
 
     ////////////////////////////////////////////////////////////////////
     // functions
@@ -265,7 +419,7 @@
 
     help.toNumberObject = `
     toNumberObject(names: array, ...args)
-        convert a sequence of stings or numbers to a object width keys named in names
+        convert a sequence of strings or numbers to a named number object width keys named in names
         example: 
             toNumberObject(["a", "b"], 10, 11) returns {a: 10, b: 11}
             toNumberObject(['a', 'b'], [10, 11]) returns {a: 10, b: 11}
@@ -293,6 +447,36 @@
         return obj;
     }
 
+    help.toObject = `
+    toObject(names: array, ...args)
+        convert a sequence of strings or numbers to a object width keys named in names
+        example: 
+            toNumberObject(["a", "b"], 10, 11) returns {a: 10, b: 11}
+            toNumberObject(['a', 'b'], [10, 11]) returns {a: 10, b: 11}
+            toNumberObject(['a', 'b'], {a: 10, b: 11, c: 12}) returns {a: 10, b: 11}
+    `
+    function toObject(names, ...args) {
+        var obj = {};
+        if (args[0] instanceof Object) {
+            var temp = args[0];
+            if (!(args[0] instanceof Array)) {
+                names.forEach((v, i) => {
+                    args[i] = temp[v];
+                });
+            } else {
+                names.forEach((v, i) => {
+                    args[i] = temp[i];
+                });
+            }
+        }
+
+        names.forEach((v, i) => {
+            obj[v] = args[i];
+        });
+
+        return obj;
+    }
+
     help.equalsTo = `
     equalsTo
         compare members of obj1 whose names are in parameter names to a sequence of variables
@@ -303,6 +487,24 @@
         args.unshift(names);
         var t = toNumberObject.apply(null, args);
         return equals(obj1, t, names);
+    }
+
+    function metric(desc, defaultUnit) {
+        var value;
+        var unit;
+        if (typeof desc == "number") {
+            value = desc;
+            unit = defaultUnit;
+        } else {
+            var re = /^\s*(\-*\d+\.*\d*)([a-zA-Z]*)\s*$/g;
+            var rs = re.exec(desc);
+            if (!rs || rs.length != 3) return null;
+            if (rs[2] == "") rs[2] = defaultUnit;
+            else if (!units[rs[2]]) rs[2] = defaultUnit;
+            value = rs[1];
+            unit = rs[2];
+        }
+        return { value, unit, descript: `${value}${unit}` }
     }
     ////////////////////////////////////////////////////////////////////
 
@@ -486,11 +688,12 @@
             if(red == undefined || red == null) return;
 
             if (typeof red == "string") {
-                var re = /^\s*#{0,1}([0-9a-fA-F]{2,8})\s*$/g;
+                var re = /^\s*#([0-9a-fA-F]{1,8})\s*$/g;
                 var rlt = re.exec(red);
                 if (rlt && rlt.length == 2) {
+                    if (rlt[1].length == 1) rlt[1] = "0" + rlt[1];
                     if (rlt[1].length == 2) rlt[1] = rlt[1] + rlt[1] + rlt[1];
-                    else if (rlt[1].length == 3) rlt[1] = rlt[1] + rlt[1].split("").reverse().join("");
+                    else if (rlt[1].length == 3) rlt[1] = rlt[1].split("").map(c => c+c).join("");
                     if (rlt[1].length <= 6) {
                         for (; rlt[1].length < 6;) rlt[1] = "0" + rlt[1];
                         for (; rlt[1].length < 8;) rlt[1] = "f" + rlt[1];
@@ -587,35 +790,64 @@
         equals(...other) {
             return equalsTo(['red', 'green', 'blue', 'alpha'], this, Color.New.apply(null, other));
         }
+        get hex(){
+            return `#${this.r.toString(16).toUpperCase().padStart(2,"0")}${this.g.toString(16).toUpperCase().padStart(2,"0")}${this.b.toString(16).toUpperCase().padStart(2,"0")}`
+        }
+        get rgb(){
+            return `rgb(${this.r}, ${this.g}, ${this.b})`
+        }
+        get rgba(){
+            return `rgb(${this.r}, ${this.g}, ${this.b}, ${this.a})`
+        }
+        get name(){
+            return hexColorNames[this.hex];
+        }
     }
 
+    help.Lateral = `
+    class Lateral
+        represent style, color and width of a lateral line
+    `
     class Lateral {
         constructor(width, style, color) {
             this._lineStyle = "solid"
             this._width = 0
-            this._unit = "px"
-            this._color = new Color(0, 0, 0, 1);
+            this._unit = 'px';
+            this._color = new Color(255, 255, 255, 1);
             if(width == null || width == undefined) return;
 
-            if (typeof width == "string") {
-                var ss = width.split(" ");
+            function abstractValue(str){
+                var ss = str.split(" ");
                 ss = ss.filter(v => v != "");
                 if (ss.length == 3) {
                     for (var s of ss) {
-                        if (styles.includes(s)) style = s;
-                        else if (Color.predefinedColors.includes(s)) color = s;
-                        else if (/^#\d+[0-9A-Fa-f]*$/g.text(s)) color = s;
+                        if (lineStyles[s]) style = s;
+                        else if (namedColors[s]) color = s;
+                        else if (/^#\d+[0-9A-Fa-f]*$/g.test(s)) color = s;
                         else if (/^\d+\.*\d*[a-zA-Z]*$/g.test(s)) width = s;
-                        else if (/^\{.+\}$/) color = s;
+                        else if (/^rgba*\(.+\)$/g.test(s)) color = s;
                     }
+                    return true;
                 }
+                return false;
             }
-            if (styles.includes(style)) this._lineStyle = style;
-            var m = domWnd.Metric(width, this._unit);
+
+            var processed = false;
+            if (typeof width == "string") {
+                processed = abstractValue(width);
+            }
+
+            if(!processed) {
+                abstractValue(`${width} ${style ? style : ""} ${color ? color : ""}`);
+            }
+
+            var t = toObject(['width', 'style', 'color'], width, style, color);
+            if (lineStyles[t.style]) this._lineStyle = t.style;
+            var m = metric(t.width, this._unit);
             this._width = m.value;
             this._unit = m.unit;
-            if (color) {
-                this._color = new Color(color);
+            if (t.color) {
+                this._color = new Color(t.color);
             }
         }
 
@@ -631,39 +863,112 @@
         get color() {
             return this._color;
         }
-
         set style(s) {
-            if (Lateral.styles.includes(s))
+            if (lineStyles[s])
                 this._lineStyle = s;
         }
         set width(width) {
-            var m = domWnd.Metric(width, this._unit);
-            _width = m.value;
-            _unit = m.unit;
+            var m = metric(width, this._unit);
+            this._width = m.value;
+            this._unit = m.unit;
         }
         set unit(u) {
-            if (domWnd.Units.includes(u)) {
+            if (units[u]) {
                 this._unit = u;
             }
         }
-        set color(c) {
-            this._color = Color.New.apply(null, arguments);
+        set color(color) {
+            this._color = Color.New(color);
+        }
+        static New(width, style, color){
+            return new Lateral(width, style, color);
+        }
+        get desc(){
+            return `${this.width}${this.unit} ${this.style} ${this.color.name ? this.color.name: this.color.hex}`;
+        }
+        equals(width, style, color){
+            return equals(this, new Lateral(width, style, color), ['width', 'unit', 'style', 'color']);
         }
     }
 
+    help.Border = `
+    class Border
+        represents four laterals of a rect
+    `
     class Border {
+        constructor(left, top, right, bottom){
+            this._left = this._top = this._right = this._bottom = new Latoeral();
+            if(!left) return;
+            var t = toObject(['left', 'top', 'right', 'bottom'], left, top, right, bottom);
+            this._left = new Lateral(t.left);
+            if(t.top) this._top = new Lateral(t.top)
+            else this.top = this._left;
+            if(t.right) this._right = new Lateral(t.right)
+            else this.right = this._left;
+            if(t.botoom) this._bottom = new Lateral(t.botoom)
+            else this.botoom = this._top;
+        }
+
+        get left(){
+            return this._left;
+        }
+        get l(){
+            return this.left;
+        }
+        get top(){
+            return this._top;
+        }
+        get t(){
+            return this.top;
+        }
+        get right(){
+            return this._right;
+        }
+        get r(){
+            return this.right;
+        }
+        get bottom(){
+            return this._bottom;
+        }
+        get b(){
+            return this.bottom;
+        }
+        set left(prm){
+            this._left = new Lateral(prm);
+        }
+        set l(prm){
+            this.left = prm;
+        }
+        set top(prm){
+            this._top = new Lateral(prm);
+        }
+        set t(prm){
+            this.top = prm;
+        }
+        set right(prm){
+            this._right = new Lateral(prm);
+        }
+        set r(prm){
+            this.right = prm;
+        }
+        set bottom(prm){
+            this._bottom = new Lateral(prm);
+        }
+        set b(prm){
+            this.bottom = prm;
+        }
     }
     ////////////////////////////////////////////////////////////////////
 
 
-    class domPage {
+    class Page {
         static New() {
-            var p = new domPage();
+            var p = new Page();
             p.Init();
             return p;
         }
         static IsPageValid(page) {
-            return page && page instanceof domPage && page.valid;
+            return page && page instanceof Page && page.valid;
         }
 
         constructor(){
@@ -680,7 +985,7 @@
 
         Init() {
             document.body.id = this.newId;
-            this._mainWnd = new domWnd(this);
+            this._mainWnd = new Wnd(this);
             this._mainWnd.Create(null);
             return this;
         }
@@ -715,13 +1020,13 @@
     }
 
     // base wnd class
-    class domWnd {
+    class Wnd {
         /////////////////////////////////
         // static classes
 
         // check if a wnd is valid domWnd
         static IsValidWnd(wnd) {
-            return wnd && wnd instanceof domWnd && wnd.wndValid;
+            return wnd && wnd instanceof Wnd && wnd.wndValid;
         }
 
         ////////////////////////////////
@@ -750,7 +1055,7 @@
             return (this._id.toString() === this._id) && this._id > 0;
         }
         get wndValid() {
-            return this._page instanceof domPage && this._page != null && this.element != null;
+            return this._page instanceof Page && this._page != null && this.element != null;
         }
         get id() {
             return this._id;
@@ -772,23 +1077,6 @@
         get position() {
             var ele = this.element;
             return new Position(ele.clientLeft, ele.clientTop);
-        }
-        static Metric(desc, defaultUnit) {
-            var value;
-            var unit;
-            if (typeof desc == "number") {
-                value = desc;
-                unit = defaultUnit;
-            } else {
-                var re = /^\s*(\-*\d+\.*\d*)([a-zA-Z]*)\s*$/g;
-                var rs = re.exec(desc);
-                if (!rs || rs.length != 3) return null;
-                if (rs[2] == "") rs[2] = this.page.unit;
-                else if (!domPage.Units().includes(rs[2])) null;
-                value = rs[1];
-                unit = rs[2];
-            }
-            return { value, unit, descript: `${value}${unit}` }
         }
         set width(width) {
             var m = domWnd.Metric(width, this.page.unit);
@@ -878,7 +1166,7 @@
             // if parent is null or undefined,
             // set this wnd to html body
             if (!parent) {
-                if (!this._page || !(this._page instanceof domPage)) return false;
+                if (!this._page || !(this._page instanceof Page)) return false;
                 this._id = document.body.id.toString();
                 this._tag = "body";
                 return true;
@@ -916,10 +1204,10 @@
             return true;
         }
 
-        static New(wnd = domWnd) {
+        static New(wnd = Wnd) {
             return new wnd();
         }
-        static CreateNew(parent, wnd = domWnd) {
+        static CreateNew(parent, wnd = Wnd) {
             var nw = new wnd();
             if (nw.Create(parent)) return nw;
 
@@ -927,7 +1215,7 @@
         }
     }
 
-    class domDiv extends domWnd {
+    class Div extends Wnd {
         get text() {
             this.element.innerText;
         }
@@ -976,7 +1264,8 @@
 
     dui.version = version;
     dui.namedColors = namedColors;
-    dui.namedLineStyles = namedLineStyles;
+    dui.hexColorNames = hexColorNames;
+    dui.lineStyles = lineStyles;
     dui.units = units;
 
     dui.help = help;
@@ -987,8 +1276,10 @@
     dui.toNumber = toNumber;
     dui.swap = swap;
     dui.equals = equals;
+    dui.toObject = toObject;
     dui.toNumberObject = toNumberObject;
     dui.equalsTo = equalsTo;
+    dui.metric = metric;
 
     dui.Point = Point;
     dui.Position = Position;
@@ -996,6 +1287,11 @@
     dui.Quad = Quad;
     dui.Rect = Rect;
     dui.Color = Color;
+    dui.Lateral = Lateral;
+    dui.Border = Border;
+    dui.Page = Page;
+    dui.Wnd = Wnd;
+    dui.Div = Div;
     
     function test(name, func){
         var assert = new Assert(name);

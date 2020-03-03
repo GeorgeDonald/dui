@@ -106,6 +106,9 @@ test("Color", assert => {
     c.r = 322;
     assert.Equals(c.r, 255);
 
+    c = new dui.Color()
+    assert.True(c.equals(new dui.Color(0,0,0)));
+
     // rgb string
     c = new dui.Color("rgb(255,255,255)")
     assert.True(c.equals(new dui.Color(255,255,255)));
@@ -115,7 +118,100 @@ test("Color", assert => {
         assert.True(dui.Color.New(cn).equals(new dui.Color(dui.namedColors[cn])));
     });
 
-})
+    // hex string
+    c = new dui.Color("#0f")
+    assert.True(c.equals(new dui.Color(15,15,15)));
 
-console.log("All tests finished successfully !!!!!!")
+    c = new dui.Color("#a")
+    assert.True(c.equals(new dui.Color(10,10,10)));
+
+    c = new dui.Color("#fe3")
+    assert.True(c.equals(new dui.Color(0xff,0xee,0x33)));
+
+    c = new dui.Color("#122232")
+    assert.True(c.equals(new dui.Color(18,34,50)));
+
+    // number string
+    c = new dui.Color("32", "128", "99")
+    assert.True(c.equals(new dui.Color(32,128,99)));
+    assert.Equals(c.hex, "#208063");
+    assert.Equals(c.rgb, "rgb(32, 128, 99)");
+    assert.Equals(c.rgba, "rgb(32, 128, 99, 1)");
+    assert.Equals(c.name, undefined);
+
+    Object.keys(dui.namedColors).forEach(cn => {
+        let name = dui.Color.New(cn).name;
+        assert.NotNull(name);
+        assert.True(dui.Color.New(name).equals(dui.Color.New(cn)));
+    });
+});
+
+test("Lateral", assert => {
+    let l = dui.Lateral.New();
+    assert.Equals(l.style, "solid");
+    assert.Equals(l.unit, "px");
+    assert.Equals(l.width, 0);
+    assert.Equals(l.color.name, "White");
+
+    l = dui.Lateral.New(3, "double", "white");
+    assert.Equals(l.style, "double");
+    assert.Equals(l.unit, "px");
+    assert.Equals(l.width, 3);
+    assert.Equals(l.color.name, "White");
+
+    l = dui.Lateral.New(l);
+    assert.Equals(l.style, "double");
+    assert.Equals(l.unit, "px");
+    assert.Equals(l.width, 3);
+    assert.Equals(l.color.name, "White");
+
+    l = dui.Lateral.New("3px", "dotted", "white");
+    assert.Equals(l.style, "dotted");
+    assert.Equals(l.unit, "px");
+    assert.Equals(l.width, 3);
+    assert.Equals(l.color.name, "White");
+
+    l = dui.Lateral.New("0.3in", "dashed", "aqua");
+    assert.Equals(l.style, "dashed");
+    assert.Equals(l.unit, "in");
+    assert.Equals(l.width, 0.3);
+    assert.Equals(l.color.name, "Aqua");
+
+    l = dui.Lateral.New("aqua", "dashed", "0.3in");
+    assert.Equals(l.style, "dashed");
+    assert.Equals(l.unit, "in");
+    assert.Equals(l.width, 0.3);
+    assert.Equals(l.color.name, "Aqua");
+
+    l = dui.Lateral.New("0.13in");
+    assert.Equals(l.style, "solid");
+    assert.Equals(l.unit, "in");
+    assert.Equals(l.width, 0.13);
+    assert.Equals(l.color.name, "White");
+
+    l.width = 2;
+    assert.Equals(l.width, 2);
+
+    l.style = dui.lineStyles.none;
+    assert.Equals(l.style, dui.lineStyles.none);
+
+    l.style = "notexists";
+    assert.Equals(l.style, dui.lineStyles.none);
+
+    l.style = "groove";
+    assert.Equals(l.style, dui.lineStyles.groove);
+
+    l.color = "oldlace";
+    assert.Equals(l.color.name, "OldLace");
+
+    l.color = "#BA55D3";
+    assert.Equals(l.color.name.toLowerCase(), "mediumorchid");
+
+    l.unit = "mm";
+    assert.Equals(l.unit, dui.units.mm);
+
+    assert.True(l.equals("2mm", "groove", "#BA55D3"));
+});
+
+console.log("✌️✌️✌️ All tests finished successfully !!!!!! ✌️✌️✌️")
 
