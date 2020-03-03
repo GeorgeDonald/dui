@@ -991,7 +991,7 @@
         }
 
         get valid() {
-            return domWnd.IsValidWnd(this.mainWnd);
+            return Wnd.IsValidWnd(this.mainWnd);
         }
         get mainWnd() {
             return this._mainWnd;
@@ -1008,7 +1008,7 @@
         set unit(unit) {
             if (typeof unit != 'string') return;
             unit = unit.toLowerCase();
-            if (!domPage.Units().includes(unit)) return;
+            if (!Page.Units().includes(unit)) return;
             this._unit = unit;
         }
         Destroy() {
@@ -1024,7 +1024,7 @@
         /////////////////////////////////
         // static classes
 
-        // check if a wnd is valid domWnd
+        // check if a wnd is valid Wnd
         static IsValidWnd(wnd) {
             return wnd && wnd instanceof Wnd && wnd.wndValid;
         }
@@ -1049,7 +1049,7 @@
             return this._page;
         }
         get pageValid() {
-            return domPage.IsPageValid(this._page);
+            return Page.IsPageValid(this._page);
         }
         get idValid() {
             return (this._id.toString() === this._id) && this._id > 0;
@@ -1079,12 +1079,12 @@
             return new Position(ele.clientLeft, ele.clientTop);
         }
         set width(width) {
-            var m = domWnd.Metric(width, this.page.unit);
+            var m = Wnd.Metric(width, this.page.unit);
             if (!m) return;
             this.element.style.width = m.descript;
         }
         set height(height) {
-            var m = domWnd.Metric(height, this.page.unit);
+            var m = Wnd.Metric(height, this.page.unit);
             if (!m) return;
             this.element.style.height = m.descript;
         }
@@ -1174,7 +1174,7 @@
 
             // this is already a valid wnd, return true
             if (this.wndValid) return true;
-            if (!domWnd.IsValidWnd(parent)) return false;
+            if (!Wnd.IsValidWnd(parent)) return false;
 
             this._page = parent.page;
             this._id = this.page.newId;
