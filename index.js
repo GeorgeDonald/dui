@@ -101,12 +101,20 @@ test("Size", assert => {
 });
 
 test("Color", assert => {
+    // rgb
     let c = new dui.Color(200, 12, 33);
     c.r = 322;
     assert.Equals(c.r, 255);
 
+    // rgb string
     c = new dui.Color("rgb(255,255,255)")
     assert.True(c.equals(new dui.Color(255,255,255)));
+
+    // name
+    Object.keys(dui.namedColors).forEach(cn => {
+        assert.True(dui.Color.New(cn).equals(new dui.Color(dui.namedColors[cn])));
+    });
+
 })
 
 console.log("All tests finished successfully !!!!!!")
