@@ -231,6 +231,11 @@ test("Page", assert => {
     assert.NotNull(child1.bgdClr.name);
     assert.Equals(child1.bgdClr.name.toLowerCase(), "yellow");
 
+    child1.top = '10px';
+    assert.Equals(child1.top, "10px");
+    child1.left = '10px';
+    assert.Equals(child1.left, "10px");
+
     child1.Destroy();
     assert.IsNull(document.getElementById(child1.id))
     assert.IsNull(child1.element);

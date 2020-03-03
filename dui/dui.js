@@ -1220,13 +1220,21 @@
         }
 
         set top(top){
-            let t = metric(top, this.path.unit);
+            let t = metric(top, this.page.unit);
             this.element.style.top = t.descript;
         }
 
+        get top(){
+            return window.getComputedStyle(this.element).top;
+        }
+
         set left(left){
-            let t = metric(top, this.path.unit);
-            this.element.style.top = t.descript;
+            let t = metric(left, this.page.unit);
+            this.element.style.left = t.descript;
+        }
+
+        get left(){
+            return window.getComputedStyle(this.element).left;
         }
 
         set pos(pos){
@@ -1234,7 +1242,7 @@
             this.left = pos.x;
             this.top = pos.y;
         }
-        
+
         layout(options){
             let left = 0;
             this._children.forEach(child => {
