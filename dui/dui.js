@@ -17,7 +17,9 @@
     } else {
         factory(global);
     }
-})(typeof window !== 'undefined' ? window : this, function (window, noGlobal) {
+})(typeof window !== 'undefined' ? window : this, duiFunc);
+
+function duiFunc(window, noGlobal) {
     "use strict";
 
     var document = window.document;
@@ -384,7 +386,7 @@
     `
     function toNumber(x) {
         if (typeof x == 'string') {
-            var rer = /(\d+\.*\d*)/g.exec(x);
+            var rer = /([\+|\-]{0,1}\d+\.*\d*e*[\+|\-]{0,1}\d*)/g.exec(x);
             if (!rer) return 0;
             x = parseFloat(rer[1]);
         }
@@ -493,7 +495,7 @@
     `
     function equalsTo(names, obj1, ...args) {
         args.unshift(names);
-        var t = toNumberObject.apply(null, args);
+        var t = toObject.apply(null, args);
         return equals(obj1, t, names);
     }
 
@@ -517,12 +519,12 @@
             value = desc;
             unit = defaultUnit;
         } else if(typeof desc == 'string'){
-            var re = /^\s*(\-*\d+\.*\d*)([a-zA-Z]*)\s*$/g;
+            var re = /^\s*([\+|\-]{0,1}\d+\.*\d*e*[\+|\-]{0,1}\d*)([a-zA-Z]*)\s*$/g;
             var rs = re.exec(desc);
             if (rs && rs.length == 3) {
                 if (rs[2] == "") rs[2] = defaultUnit;
                 else if (!units[rs[2]]) rs[2] = defaultUnit;
-                value = rs[1];
+                value = toNumber(rs[1]);
                 unit = rs[2];
             } else {
                 value = toNumber(desc);
@@ -560,9 +562,18 @@
     convertUnit
         convert a quantity from one measurement to another one
     `
-    function convertUnit(value1, unit1, unit2){
-        if(arguments.length < 3) throw new Error("3 parameters required");
-        let v1 = toPixels(value1, unit1);
+    function convertUnit(value, unit1, unit2){
+        if(arguments.length < 2) throw new Error("2 or 3 parameters required");
+        if(uon(unit2)){
+            unit2 = unit1;
+            var t = metric(value);
+            value = t.value;
+            unit1 = t.unit;
+        }
+
+        if(unit1 == unit2) return value;
+
+        let v1 = toPixels(value, unit1);
         let v2 = toPixels(1, unit2);
         if(v1.unit != v2.unit) {
             throw new Error("Your browser doesn't support unit conversion");
@@ -589,7 +600,7 @@
             totalWidth = t3.value;
             totalWidthUnit = t3.unit;
         } else if(!uon(totalWidth)){
-            var t = matric(totalWidth);
+            var t = metric(totalWidth);
             totalWidth = t.value;
             totalWidthUnit = t.unit;
         }
@@ -609,7 +620,7 @@
             unit2 = totalWidthUnit;
         }
 
-        var value = convertUnit(value2, unit2, unit1).value + value1;
+        var value = convertUnit(value2, unit2, unit1) + value1;
         return { value, unit: unit1, desc: `${value}${unit1}` }
     }
     ////////////////////////////////////////////////////////////////////
@@ -643,16 +654,31 @@
             return `${this.value}${this.unit}`;
         }
         equals(...args){
-            var q = Quant.New.apply(args);
-            return equals(this, q, ['value', 'unit']);
+            var q = Quant.New.apply(null, args);
+            return equals(this.toUnit(q.unit), q, ['value', 'unit']);
         }
         static New(value, unit){
             return new Quant(value, unit);
         }
-        add(value, unit){
-            var t = new Quant(value, unit);
-            var value = this.value + t.value;
-            return new Quant(value, this.unit);
+        add(value, unit, totalWidth, totalWidthUnit){
+            if(!units[unit]) {
+                var t = metric(value);
+                if(!totalWidth){
+                    var tt = metric(unit);
+                    totalWidth = tt.value;
+                    totalWidthUnit = tt.unit;
+                }
+                value = t.value;
+                unit = t.unit;
+            }
+
+            this.value = metricAdd(this.value, this.unit, value, unit, totalWidth, totalWidthUnit).value;
+            return this;
+        }
+        toUnit(unit){
+            this.value = convertUnit(this.value, unit);
+            this.unit = unit;
+            return this;
         }
     }
 
@@ -671,8 +697,8 @@
         }
         offset(x, y) {
             var t = new Point(x, y);
-            this.x += t.x;
-            this.y += t.y;
+            this.x.add(t.x);
+            this.y.add(t.y);
             return this;
         }
         equals(x, y) {
@@ -696,19 +722,19 @@
     `
     class Size {
         constructor(width, height) {
-            var t = toNumberObject(["width", "height"], width, height);
-            this.width = t.width;
-            this.height = t.height;
+            var t = toObject(["width", "height"], width, height);
+            this.width = new Quant(t.width);
+            this.height = new Quant(t.height);
         }
         add(width, height) {
-            var t = toNumberObject(["width", "height"], width, height);
-            this.width += t.width;
-            this.height += t.height;
+            var t = toObject(["width", "height"], width, height);
+            this.width.add(t.width);
+            this.height.add(t.height);
             return this;
         }
         normalize() {
-            if (this.width < 0) this.width = -this.width;
-            if (this.height < 0) this.height = -this.height;
+            if (this.width.value < 0) this.width.value = -this.width.value;
+            if (this.height.value < 0) this.height.value = -this.height.value;
             return this;
         }
         equals(width, height) {
@@ -726,29 +752,29 @@
     `
     class Quad{
         constructor(l, t, r, b) {
-            var t1 = toNumberObject(["left", "top", "right", "bottom"], l, t, r, b);
-            this.left = t1.left;
-            this.top = t1.top;
-            this.right = t1.right;
-            this.bottom = t1.bottom;
+            var t1 = toObject(["left", "top", "right", "bottom"], l, t, r, b);
+            this.left = new Quant(t1.left);
+            this.top = new Quant(t1.top);
+            this.right = new Quant(t1.right);
+            this.bottom = new Quant(t1.bottom);
             if (l.width != undefined || l.height != undefined) {
-                var t2 = toNumberObject(["left", "top", "width", "height"], l, t, r, b);
-                if (l.width != undefined) this.right = this.left + t2.width;
-                if (l.height != undefined) this.bottom = this.top + t2.height;
+                var t2 = toObject(["left", "top", "width", "height"], l, t, r, b);
+                if (l.width != undefined) this.right = new Quant(this.left).add(t2.width);
+                if (l.height != undefined) this.bottom = new Quant(this.top).add(t2.height);
             }
         }
 
         add(left, top, right, bottom) {
-            var t = toNumberObject(["left", "top", "right", "bottom"], left, top, right, bottom);
-            this.left += t.left;
-            this.top += t.top;
-            this.right += t.right;
-            this.bottom += t.bottom;
+            var t = toObject(["left", "top", "right", "bottom"], left, top, right, bottom);
+            this.left.add(t.left);
+            this.top.add(t.top);
+            this.right.add(t.right);
+            this.bottom.add(t.bottom);
             return this;
         }
 
         equals(left, top, right, bottom) {
-            return equals(["left", "top", "right", "bottom"], this, new Rect(left, top, right, bottom));
+            return equals(this, new Quad(left, top, right, bottom), ["left", "top", "right", "bottom"]);
         }
 
         static New(left, top, right, bottom){
@@ -1467,6 +1493,8 @@
     dui.equalsTo = equalsTo;
     dui.metric = metric;
     dui.toPixels = toPixels;
+    dui.convertUnit = convertUnit;
+    dui.metricAdd = metricAdd;
 
     dui.Quant = Quant;
     dui.Point = Point;
@@ -1492,4 +1520,4 @@
     }
 
     return dui;
-});
+}
