@@ -369,6 +369,14 @@
         console.log(msg);
     }
 
+    function uon(v){
+        return v == undefined || v == null;
+    }
+
+    function nou(v){
+        return uon(v);
+    }
+
     help.toNumber = `
     toNumber(x: string)
         convert string to float
@@ -489,27 +497,164 @@
         return equals(obj1, t, names);
     }
 
+    help.metric = `
+    metric
+        convert quantity string to value and unit
+        10px => 10, px
+        10 => 10, px
+        10% => 10, %
+        10, % => 10, %
+        Quantity(10, 'mm') => 10, mm
+        {value: 10, "unit": "in"} => 10in
+        [10, 20, 30] => 10px
+        [10, 'in', 30] => 10in
+        10abcdef => 10, px
+    `
     function metric(desc, defaultUnit) {
         var value;
         var unit;
         if (typeof desc == "number") {
             value = desc;
             unit = defaultUnit;
-        } else {
+        } else if(typeof desc == 'string'){
             var re = /^\s*(\-*\d+\.*\d*)([a-zA-Z]*)\s*$/g;
             var rs = re.exec(desc);
-            if (!rs || rs.length != 3) return null;
-            if (rs[2] == "") rs[2] = defaultUnit;
-            else if (!units[rs[2]]) rs[2] = defaultUnit;
-            value = rs[1];
-            unit = rs[2];
+            if (rs && rs.length == 3) {
+                if (rs[2] == "") rs[2] = defaultUnit;
+                else if (!units[rs[2]]) rs[2] = defaultUnit;
+                value = rs[1];
+                unit = rs[2];
+            } else {
+                value = toNumber(desc);
+                unit = defaultUnit;
+            }
+        } else {
+            var t = toObject(["value", "unit"], desc);
+            value = toNumber(t.value);
+            unit = t.unit;
         }
-        return { value, unit, descript: `${value}${unit}` }
+        unit = units[unit];
+        if(!unit) unit = "px";
+        return { value, unit, desc: `${value}${unit}` }
+    }
+
+    function toPixels(value, unit){
+        if(arguments.length < 2) throw new Error("2 parameters required");
+        if(uon(value) || uon(unit) || typeof unit != 'string' || !units[unit]) {
+            throw new Error("Invalid parameters.");
+        }
+
+        var e = document.createElement("div");
+        e.style.position = "absolute";
+        e.style.left = `-${value}${unit}`;
+        e.style.top = `-${value}${unit}`;
+        e.style.width = `${value}${unit}`;
+        e.style.height = `${value}${unit}`;
+        document.body.appendChild(e);
+        var x = window.getComputedStyle(e).width;
+        document.body.removeChild(e);
+        return metric(x);
+    }
+
+    help.convertUnit = `
+    convertUnit
+        convert a quantity from one measurement to another one
+    `
+    function convertUnit(value1, unit1, unit2){
+        if(arguments.length < 3) throw new Error("3 parameters required");
+        let v1 = toPixels(value1, unit1);
+        let v2 = toPixels(1, unit2);
+        if(v1.unit != v2.unit) {
+            throw new Error("Your browser doesn't support unit conversion");
+        }
+        return v1.value / v2.value;
+    }
+
+    help.metricAdd = `
+    metricAdd
+        at least two parameters needed
+        for two parameters: value1: quantity 1, unit1: quantity 2
+        for three parameters: value1: quantity 1, unit1: quantity 2, value2: total width
+    `
+    function metricAdd(value1, unit1, value2, unit2, totalWidth, totalWidthUnit){
+        if(uon(value1) || nou(!unit1)) throw new Error("At least 2 parameters needed");
+        if(uon(unit2) && uon(totalWidth) && uon(totalWidthUnit)){
+            var t1 = metric(value1);
+            var t2 = metric(unit1);
+            var t3 = metric(value2);
+            value1 = t1.value;
+            unit1 = t1.unit;
+            value2 = t2.value;
+            unit2 = t2.unit;
+            totalWidth = t3.value;
+            totalWidthUnit = t3.unit;
+        } else if(!uon(totalWidth)){
+            var t = matric(totalWidth);
+            totalWidth = t.value;
+            totalWidthUnit = t.unit;
+        }
+
+        if((totalWidthUnit && (!units[totalWidthUnit] || totalWidthUnit == "%")) ||
+            (!units[totalWidthUnit] && (unit1 == "%" || unit2 == "%"))) {
+            throw new Error("Invalid ")
+        }
+
+        if(unit1 == "%") {
+            value1 = value1 * totalWidthUnit / 100.0;
+            unit1 = totalWidthUnit;
+        }
+
+        if(unit2 == "%") {
+            value2 = value2 * totalWidthUnit / 100.0;
+            unit2 = totalWidthUnit;
+        }
+
+        var value = convertUnit(value2, unit2, unit1).value + value1;
+        return { value, unit: unit1, desc: `${value}${unit1}` }
     }
     ////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////
     // basic classes
+
+    help.Quant = `
+    class Quantity
+        represents (value, unit)
+    `
+    class Quant {
+        constructor(value, unit){
+            this.value = 0;
+            this.unit = 'px';
+            if(!value) return;
+
+            if(typeof value == "string"){
+                var t = metric(value, unit ? unit : "px");
+                value = t.value;
+                unit = t.unit;
+            }
+            var t = toObject(['value', 'unit'], value, unit);
+            this.value = toNumber(t.value);
+            this.unit = units[t.unit];
+            if(!this.unit){
+                this.unit = "px";
+            }
+        }
+        get desc(){
+            return `${this.value}${this.unit}`;
+        }
+        equals(...args){
+            var q = Quant.New.apply(args);
+            return equals(this, q, ['value', 'unit']);
+        }
+        static New(value, unit){
+            return new Quant(value, unit);
+        }
+        add(value, unit){
+            var t = new Quant(value, unit);
+            var value = this.value + t.value;
+            return new Quant(value, this.unit);
+        }
+    }
 
     help.Point = `
     class Point
@@ -520,12 +665,12 @@
     `
     class Point {
         constructor(x, y) {
-            var t = toNumberObject(["x", "y"], x, y);
-            this.x = t.x;
-            this.y = t.y;
+            var t = toObject(["x", "y"], x, y);
+            this.x = new Quant(t.x);
+            this.y = new Quant(t.y);
         }
         offset(x, y) {
-            var t = toNumberObject(["x", "y"], x, y);
+            var t = new Point(x, y);
             this.x += t.x;
             this.y += t.y;
             return this;
@@ -1321,7 +1466,9 @@
     dui.toNumberObject = toNumberObject;
     dui.equalsTo = equalsTo;
     dui.metric = metric;
+    dui.toPixels = toPixels;
 
+    dui.Quant = Quant;
     dui.Point = Point;
     dui.Position = Position;
     dui.Size = Size;

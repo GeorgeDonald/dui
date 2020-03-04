@@ -7,6 +7,17 @@ let dui = require("dui")(window);
 let test = dui.test;
 let document = window.document;
 
+// {
+//     let units = dui.units;
+//     let obj = {};
+//     Object.keys(units).forEach(u1 => {
+//         Object.keys(units).forEach(u2 => {
+//             obj[u1+" "+u2] = "function(v1, v2) {return v1 + v2}";
+//         });
+//     });
+//     console.log(JSON.stringify(obj, null, "    "));
+// }
+
 test("toNumber", (assert) => {
     assert.Equals(dui.toNumber("10"), 10);
     assert.Equals(dui.toNumber(33), 33);
@@ -67,6 +78,66 @@ test("equalsTo", (assert) => {
     assert.False(dui.equalsTo(['a', 'b'], {a: 19, b: 201}, {a: 19}));
     assert.False(dui.equalsTo(['a', 'b'], {a: 19, b: 201}, {a: 19, c: 202}));
     assert.False(dui.equalsTo(['a', 'b'], {a: 19, b: 201}));
+});
+
+test("toPixels", assert => {
+    let tp = dui.toPixels;
+    assert.Equals(tp(0, "mm"), 0);
+    assert.Equals(tp(1, "in"), 96);
+});
+
+test("metric", assert => {
+    let metric = dui.metric;
+    let t = metric("10px");
+    assert.Equals(t.value, 10);
+    assert.Equals(t.unit, 'px');
+
+    t = metric("10", 'px');
+    assert.Equals(t.value, 10);
+    assert.Equals(t.unit, 'px');
+
+    t = metric(10);
+    assert.Equals(t.value, 10);
+    assert.Equals(t.unit, 'px');
+
+    t = metric({value: "10", unit: "mm"});
+    assert.Equals(t.value, 10);
+    assert.Equals(t.unit, 'mm');
+
+    t = metric({value: "13", unit: "mm"});
+    assert.Equals(t.value, 13);
+    assert.Equals(t.unit, 'mm');
+
+    t = metric([17, 'pt']);
+    assert.Equals(t.value, 17);
+    assert.Equals(t.unit, 'pt');
+
+
+    t = metric("a10b30askoie");
+    assert.Equals(t.value, 10);
+    assert.Equals(t.unit, 'px');
+});
+
+test("Qunant", assert => {
+    let Quant = dui.Quant;
+    let q = Quant.New();
+    assert.True(q.equals(new Quant()));
+
+    q = Quant.New(new Quant("19mm"));
+    assert.Equals(q.value, 19);
+    assert.Equals(q.unit, 'mm');
+
+    q = Quant.New(18, "pc");
+    assert.Equals(q.value, 18);
+    assert.Equals(q.unit, 'pc');
+
+    q = dui.metric(Quant.New("28", "%"));
+    assert.Equals(q.value, 28);
+    assert.Equals(q.unit, '%');
+
+    q = Quant.New("alsdkjf;aslf", 0);
+    assert.Equals(q.value, 0);
+    assert.Equals(q.unit, 'px');
 });
 
 test("Point", assert => {
