@@ -274,49 +274,42 @@ test("Color", assert => {
 
 test("Lateral", assert => {
     let l = dui.Lateral.New();
-    assert.Equals(l.style, "solid");
-    assert.Equals(l.unit, "px");
-    assert.Equals(l.width, 0);
-    assert.Equals(l.color.name, "White");
+    assert.Equals(l.style, "none");
+    assert.Equals(l.width.desc, '0px');
+    assert.Equals(l.color.name, "Black");
 
     l = dui.Lateral.New(3, "double", "white");
     assert.Equals(l.style, "double");
-    assert.Equals(l.unit, "px");
-    assert.Equals(l.width, 3);
+    assert.Equals(l.width.desc, '3px');
     assert.Equals(l.color.name, "White");
 
     l = dui.Lateral.New(l);
     assert.Equals(l.style, "double");
-    assert.Equals(l.unit, "px");
-    assert.Equals(l.width, 3);
+    assert.Equals(l.width.desc, "3px");
     assert.Equals(l.color.name, "White");
 
     l = dui.Lateral.New("3px", "dotted", "white");
     assert.Equals(l.style, "dotted");
-    assert.Equals(l.unit, "px");
-    assert.Equals(l.width, 3);
+    assert.Equals(l.width.desc, "3px");
     assert.Equals(l.color.name, "White");
 
     l = dui.Lateral.New("0.3in", "dashed", "aqua");
     assert.Equals(l.style, "dashed");
-    assert.Equals(l.unit, "in");
-    assert.Equals(l.width, 0.3);
+    assert.Equals(l.width.desc, '0.3in');
     assert.Equals(l.color.name, "Aqua");
 
     l = dui.Lateral.New("aqua", "dashed", "0.3in");
     assert.Equals(l.style, "dashed");
-    assert.Equals(l.unit, "in");
-    assert.Equals(l.width, 0.3);
+    assert.Equals(l.width.desc, '0.3in');
     assert.Equals(l.color.name, "Aqua");
 
     l = dui.Lateral.New("0.13in");
-    assert.Equals(l.style, "solid");
-    assert.Equals(l.unit, "in");
-    assert.Equals(l.width, 0.13);
-    assert.Equals(l.color.name, "White");
+    assert.Equals(l.style, "none");
+    assert.Equals(l.width.desc, '0.13in');
+    assert.Equals(l.color.name, "Black");
 
     l.width = 2;
-    assert.Equals(l.width, 2);
+    assert.Equals(l.width.desc, '2px');
 
     l.style = dui.lineStyles.none;
     assert.Equals(l.style, dui.lineStyles.none);
@@ -333,10 +326,24 @@ test("Lateral", assert => {
     l.color = "#BA55D3";
     assert.Equals(l.color.name.toLowerCase(), "mediumorchid");
 
-    l.unit = "mm";
-    assert.Equals(l.unit, dui.units.mm);
+    l.width = '2mm'
+    //assert.True(l.equals("2mm", "groove", "#BA55D3"));
+});
 
-    assert.True(l.equals("2mm", "groove", "#BA55D3"));
+test("Border", assert => {
+    let Border = dui.Border;
+    let b1 = new Border();
+    assert.True(b1.left.equals('0px'));
+
+    b1 = new Border('1px solid yellow');
+    assert.True(b1.left.equals(b1.top));
+    assert.True(b1.left.equals(b1.right));
+    assert.True(b1.left.equals(b1.bottom));
+    assert.True(b1.left.equals(new dui.Lateral(1, "solid", "yellow")));
+    assert.Equals(b1.desc, '1px solid Yellow');
+    
+    let b2 = Border.New("Yellow solid 1");
+    assert.Equals(b1, b2);
 });
 
 test("Page", assert => {
@@ -350,17 +357,28 @@ test("Page", assert => {
     assert.True(child1.element);
     assert.Equals(child1.element.tagName, "DIV");
     child1.width = "80px";
-    assert.Equals(child1.width, '80px');
+    assert.True(child1.width.equals('80px'));
     child1.height = "120px";
-    assert.Equals(child1.height, "120px");
+    assert.True(child1.height.equals("120px"));
     child1.bgdClr = "yellow";
     assert.NotNull(child1.bgdClr.name);
     assert.Equals(child1.bgdClr.name.toLowerCase(), "yellow");
 
     child1.top = '10px';
-    assert.Equals(child1.top, "10px");
+    assert.True(child1.top.equals("10px"));
     child1.left = '10px';
-    assert.Equals(child1.left, "10px");
+    assert.True(child1.left.equals("10px"));
+
+    child1.bdr = "lightgreen 3px double";
+    let bdr = child1.bdr;
+    assert.True(bdr.l.equals('double lightgreen 3px'));
+    assert.True(bdr.l.equals(child1.lbdr));
+    assert.True(bdr.t.equals(child1.tbdr));
+    assert.True(bdr.r.equals(child1.rbdr));
+    assert.True(bdr.b.equals(child1.bbdr));
+    child1.lbdr = '2px groove darkred';
+    assert.Equals(child1.bdr.desc, "");
+    assert.True(child1.lbdr.equals(new dui.Lateral(2, 'groove', 'darkred')));
 
     child1.Destroy();
     assert.IsNull(document.getElementById(child1.id))

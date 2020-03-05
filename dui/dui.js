@@ -424,7 +424,11 @@ function duiFunc(window, noGlobal) {
         } else if(typeof names == "number" || typeof names == "string"){
             names = [names];
         }
-        return names.every(v => equals(obj1[v], obj2[v]));
+        return names.every(v => {
+            if(typeof obj1[v].equals == 'function') {
+                return obj1[v].equals(obj2[v]);
+            } else return equals(obj1[v], obj2[v])
+        });
     }
 
     help.toNumberObject = `
@@ -523,7 +527,7 @@ function duiFunc(window, noGlobal) {
             var rs = re.exec(desc);
             if (rs && rs.length == 3) {
                 if (rs[2] == "") rs[2] = defaultUnit;
-                else if (!units[rs[2]]) rs[2] = defaultUnit;
+                else if (!units[rs[2].toLowerCase()]) rs[2] = defaultUnit;
                 value = toNumber(rs[1]);
                 unit = rs[2];
             } else {
@@ -535,14 +539,14 @@ function duiFunc(window, noGlobal) {
             value = toNumber(t.value);
             unit = t.unit;
         }
-        unit = units[unit];
+        unit = typeof unit == 'string' ? units[unit.toLowerCase()] : undefined;
         if(!unit) unit = "px";
         return { value, unit, desc: `${value}${unit}` }
     }
 
     function toPixels(value, unit){
         if(arguments.length < 2) throw new Error("2 parameters required");
-        if(uon(value) || uon(unit) || typeof unit != 'string' || !units[unit]) {
+        if(uon(value) || uon(unit) || typeof unit != 'string' || !units[unit.toLowerCase()]) {
             throw new Error("Invalid parameters.");
         }
 
@@ -611,7 +615,8 @@ function duiFunc(window, noGlobal) {
             totalWidthUnit = t.unit;
         }
 
-        if((totalWidthUnit && (!units[totalWidthUnit] || totalWidthUnit == "%")) ||
+        if(typeof totalWidthUnit == 'string') totalWidthUnit = totalWidthUnit.toLowerCase();
+        if((typeof totalWidthUnit == 'string' && (!units[totalWidthUnit] || totalWidthUnit == "%")) ||
             (!units[totalWidthUnit] && (unit1 == "%" || unit2 == "%"))) {
             throw new Error("Invalid ")
         }
@@ -651,7 +656,7 @@ function duiFunc(window, noGlobal) {
             }
             var t = toObject(['value', 'unit'], value, unit);
             this.value = toNumber(t.value);
-            this.unit = units[t.unit];
+            this.unit = typeof t.unit == 'string' ? units[t.unit.toLowerCase()]: undefined;
             if(!this.unit){
                 this.unit = "px";
             }
@@ -667,7 +672,7 @@ function duiFunc(window, noGlobal) {
             return new Quant(value, unit);
         }
         add(value, unit, totalWidth, totalWidthUnit, sub){
-            if(!units[unit]) {
+            if(typeof unit != 'string' || !units[unit]) {
                 var t = metric(value);
                 if(uon(totalWidth)){
                     var tt = metric(unit);
@@ -1057,7 +1062,7 @@ function duiFunc(window, noGlobal) {
         constructor(width, style, color) {
             this._lineStyle = "none"
             this._width = new Quant(0,'px');
-            this._color = new Color(255, 255, 255, 1);
+            this._color = new Color(0, 0, 0, 1);
             if(width == null || width == undefined) return;
 
             function abstractValue(str){
@@ -1066,9 +1071,9 @@ function duiFunc(window, noGlobal) {
                 if (ss.length == 3) {
                     for (var s of ss) {
                         if (lineStyles[s]) style = s;
-                        else if (namedColors[s]) color = s;
+                        else if (namedColors[s.toLowerCase()]) color = s;
                         else if (/^#\d+[0-9A-Fa-f]*$/g.test(s)) color = s;
-                        else if (/^\d+\.*\d*[a-zA-Z]*$/g.test(s)) width = s;
+                        else if (/^[\+|\-]{0,1}\d+\.*\d*[a-zA-Z]*$/g.test(s)) width = s;
                         else if (/^rgba*\(.+\)$/g.test(s)) color = s;
                     }
                     return true;
@@ -1119,7 +1124,7 @@ function duiFunc(window, noGlobal) {
             return `${this.width.desc} ${this.style} ${this.color.name ? this.color.name: this.color.hex}`;
         }
         equals(width, style, color){
-            return equals(this, new Lateral(width, style, color), ['width', 'unit', 'style', 'color']);
+            return equals(this, new Lateral(width, style, color), ['width', 'style', 'color']);
         }
     }
 
@@ -1129,16 +1134,22 @@ function duiFunc(window, noGlobal) {
     `
     class Border {
         constructor(left, top, right, bottom){
-            this._left = this._top = this._right = this._bottom = new Latoeral();
+            this._left = this._top = this._right = this._bottom = new Lateral();
             if(!left) return;
-            var t = toObject(['left', 'top', 'right', 'bottom'], left, top, right, bottom);
-            this._left = new Lateral(t.left);
-            if(t.top) this._top = new Lateral(t.top)
-            else this.top = this._left;
-            if(t.right) this._right = new Lateral(t.right)
-            else this.right = this._left;
-            if(t.botoom) this._bottom = new Lateral(t.botoom)
-            else this.botoom = this._top;
+            if(!(left instanceof Lateral)) {
+                var t = toObject(['left', 'top', 'right', 'bottom'], left, top, right, bottom);
+                left = t.left;
+                top = t.top;
+                right = t.right;
+                bottom = t.bottom;
+            }
+            this._left = new Lateral(left);
+            if(top) this._top = new Lateral(top)
+            else this._top = new Lateral(this._left);
+            if(right) this._right = new Lateral(right)
+            else this._right = new Lateral(this._left);
+            if(bottom) this._bottom = new Lateral(bottom)
+            else this._bottom = new Lateral(this._top);
         }
 
         get left(){
@@ -1188,6 +1199,18 @@ function duiFunc(window, noGlobal) {
         }
         set b(prm){
             this.bottom = prm;
+        }
+        get desc(){
+            if(this._left.equals(this._top) && this._left.equals(this._right) && this._left.equals(this._bottom)){
+                return this._left.desc;
+            } else return "";
+        }
+        equals(...args){
+            var t = Border.constructor.apply(null, args);
+            return equals(this, t, ['left', 'top', 'right', 'bottom']);
+        }
+        static New(left, top, right, bottom){
+            return new Border(left, top, right, bottom);
         }
     }
     ////////////////////////////////////////////////////////////////////
@@ -1302,10 +1325,10 @@ function duiFunc(window, noGlobal) {
             return document.getElementById(this.id);
         }
         get width() {
-            return window.getComputedStyle(this.element).width;
+            return new Quant(window.getComputedStyle(this.element).width);
         }
         get height() {
-            return window.getComputedStyle(this.element).height;
+            return new Quant(window.getComputedStyle(this.element).height);
         }
         get rect() {
             var ele = this.element;
@@ -1316,14 +1339,12 @@ function duiFunc(window, noGlobal) {
             return new Position(ele.clientLeft, ele.clientTop);
         }
         set width(width) {
-            var m = metric(width, this.page.unit);
-            if (!m) return;
-            this.element.style.width = m.descript;
+            var m = new Quant(width, this.page.unit);
+            this.element.style.width = m.desc;
         }
         set height(height) {
-            var m = metric(height, this.page.unit);
-            if (!m) return;
-            this.element.style.height = m.descript;
+            var m = new Quant(height, this.page.unit);
+            this.element.style.height = m.desc;
         }
         GetColor(attr) {
             var bc = window.getComputedStyle(this.element)[attr];
@@ -1353,8 +1374,67 @@ function duiFunc(window, noGlobal) {
             args.unshift("color")
             this.SetColor.apply(this, args);
         }
+        get bdr(){
+            var style = this.element.style;
+            return new Border(style.borderLeft, style.borderTop, style.borderRight, style.borderBottom);
+        }
+        get bdrLeft(){
+            return new Lateral(this.element.style.borderLeft);
+        }
+        get lbdr(){
+            return this.bdrLeft;
+        }
+        get bdrTop(){
+            return new Lateral(this.element.style.borderTop);
+        }
+        get tbdr(){
+            return this.bdrTop;
+        }
+        get bdrRight(){
+            return new Lateral(this.element.style.borderRight);
+        }
+        get rbdr(){
+            return this.bdrRight;
+        }
+        get bdrBottom(){
+            return new Lateral(this.element.style.borderBottom);
+        }
+        get bbdr(){
+            return this.bdrBottom;
+        }
 
-        
+        set bdr(val){
+            var bdr = Border.New(val);
+            var style = this.element.style;
+            style.borderLeft = bdr.left.desc;
+            style.borderTop = bdr.top.desc;
+            style.borderRight = bdr.right.desc;
+            style.borderBottom = bdr.bottom.desc;
+        }
+        set bdrLeft(val){
+            this.element.style.borderLeft = new Lateral(val).desc;
+        }
+        set lbdr(val){
+            this.bdrLeft = val;
+        }
+        set bdrTop(val){
+            this.element.style.borderTop = new Lateral(val).desc;
+        }
+        set tbdr(val){
+            this.bdrTop = val;
+        }
+        set bdrRight(val){
+            this.element.style.borderRight = new Lateral(val).desc;
+        }
+        set rbdr(val){
+            this.bdrRight = val;
+        }
+        set bdrBottom(val){
+            this.element.style.borderBottom = new Lateral(val).desc;
+        }
+        set bbdr(val){
+            this.bdrBottom = val;
+        }
 
         AddChild(child) {
             if (this._children[child.id] != null) {
@@ -1453,22 +1533,26 @@ function duiFunc(window, noGlobal) {
             return null;
         }
 
+        // set position top coordination
         set top(top){
-            let t = metric(top, this.page.unit);
-            this.element.style.top = t.descript;
+            let t = new Quant(top, this.page.unit);
+            this.element.style.top = t.desc;
         }
 
+        // get position top coordination
         get top(){
-            return window.getComputedStyle(this.element).top;
+            return new Quant(window.getComputedStyle(this.element).top);
         }
 
+        // set position left coordination
         set left(left){
-            let t = metric(left, this.page.unit);
-            this.element.style.left = t.descript;
+            let t = new Quant(left, this.page.unit);
+            this.element.style.left = t.desc;
         }
 
+        // get position left corrdination
         get left(){
-            return window.getComputedStyle(this.element).left;
+            return new Quant(window.getComputedStyle(this.element).left);
         }
 
         set pos(pos){
