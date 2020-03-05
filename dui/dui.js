@@ -577,12 +577,12 @@ function duiFunc(window, noGlobal) {
 
         if(unitFrom == unitTo) return value;
 
-        let v1 = toPixels(value, unitFrom);
-        let v2 = toPixels(1, unitTo);
+        let v1 = toPixels(10000, unitFrom);
+        let v2 = toPixels(10000, unitTo);
         if(v1.unit != v2.unit) {
             throw new Error("Your browser doesn't support unit conversion");
         }
-        return v1.value / v2.value;
+        return Math.trunc(v1.value * value / v2.value * 10000) / 10000;
     }
 
     function valarizeRate(objRate, objTotal){
@@ -1281,6 +1281,9 @@ function duiFunc(window, noGlobal) {
 
     // base wnd class
     class Wnd {
+        // browser view port as screen
+        // html body as mainWnd
+
         /////////////////////////////////
         // static classes
 
@@ -1479,6 +1482,10 @@ function duiFunc(window, noGlobal) {
                 this[attr] = attributes[attr];
             });
         }
+
+        onClick(event){
+            console.log("You clicked a Wnd");
+        }
         // for this base wnd class, create a "div" wnd
         // unless parent is null, in which case set this wnd to html body
         Create(parent) {
@@ -1488,6 +1495,7 @@ function duiFunc(window, noGlobal) {
                 if (!this._page || !(this._page instanceof Page)) return false;
                 this._id = document.body.id.toString();
                 this._tag = "body";
+                this.element.addEventListener("click", this.onClick);
                 return true;
             }
 
@@ -1499,7 +1507,10 @@ function duiFunc(window, noGlobal) {
             this._id = this.page.newId;
             var thisElement = document.createElement(this._tag);
             thisElement.id = this._id;
+
             thisElement.style.position = "absolute";
+            thisElement.style.overflowX = "hidden";
+            thisElement.style.overflowY = "hidden";
 
             var parentElement = document.getElementById(parent.id);
             parentElement.appendChild(thisElement);
@@ -1555,6 +1566,22 @@ function duiFunc(window, noGlobal) {
             return new Quant(window.getComputedStyle(this.element).left);
         }
 
+        get right(){
+            return this.left.add(this.width);
+        }
+
+        get bottom(){
+            return this.top.add(this.height);
+        }
+
+        set right(val){
+            this.width = new Quant(val).sub(this.left);
+        }
+
+        set bottom(val){
+            this.height = new Quant(val).sub(this.left);
+        }
+
         set pos(pos){
             pos = new Position(pos);
             this.left = pos.x;
@@ -1577,6 +1604,9 @@ function duiFunc(window, noGlobal) {
         }
         set text(text) {
             this.element.innerText = text;
+        }
+        onClick(){
+            console.log("You clicked a Div");
         }
     }
 
