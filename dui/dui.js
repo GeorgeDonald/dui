@@ -562,23 +562,29 @@ function duiFunc(window, noGlobal) {
     convertUnit
         convert a quantity from one measurement to another one
     `
-    function convertUnit(value, unit1, unit2){
+    function convertUnit(value, unitFrom, unitTo){
         if(arguments.length < 2) throw new Error("2 or 3 parameters required");
-        if(uon(unit2)){
-            unit2 = unit1;
+        if(uon(unitTo)){
+            unitTo = unitFrom;
             var t = metric(value);
             value = t.value;
-            unit1 = t.unit;
+            unitFrom = t.unit;
         }
 
-        if(unit1 == unit2) return value;
+        if(unitFrom == unitTo) return value;
 
-        let v1 = toPixels(value, unit1);
-        let v2 = toPixels(1, unit2);
+        let v1 = toPixels(value, unitFrom);
+        let v2 = toPixels(1, unitTo);
         if(v1.unit != v2.unit) {
             throw new Error("Your browser doesn't support unit conversion");
         }
         return v1.value / v2.value;
+    }
+
+    function valarizeRate(objRate, objTotal){
+        if(objRate.unit != '%') return;
+        objRate.value = objRate.value * objTotal.value / 100.0;
+        objRate.unit = objTotal.unit;
     }
 
     help.metricAdd = `
@@ -660,19 +666,65 @@ function duiFunc(window, noGlobal) {
         static New(value, unit){
             return new Quant(value, unit);
         }
-        add(value, unit, totalWidth, totalWidthUnit){
+        add(value, unit, totalWidth, totalWidthUnit, sub){
             if(!units[unit]) {
                 var t = metric(value);
-                if(!totalWidth){
+                if(uon(totalWidth)){
                     var tt = metric(unit);
                     totalWidth = tt.value;
                     totalWidthUnit = tt.unit;
                 }
                 value = t.value;
                 unit = t.unit;
+            } else if(uon(totalWidthUnit)){
+                var tt = metric(unit);
+                totalWidth = tt.value;
+                totalWidthUnit = tt.unit;
             }
 
-            this.value = metricAdd(this.value, this.unit, value, unit, totalWidth, totalWidthUnit).value;
+            var t = new Quant(value, unit);
+            var total = {value: totalWidth, unit: totalWidthUnit};
+            valarizeRate(this, total);
+            valarizeRate(t, total)
+
+            t = convertUnit(t.value, t.unit, this.unit);
+            if(sub != true) this.value += t;
+            else this.value -= t;
+            return this;
+        }
+        sub(value, unit, totalWidth, totalWidthUnit){
+            return this.add(value, unit, totalWidth, totalWidthUnit, true);
+        }
+        oppsite(){
+            this.value = -this.value;
+            return this;
+        }
+        compare(other){
+            if(!(other instanceof Quant))throw new Error('Invalid parameter');
+            var t = convertUnit(other.value, other.unit, this.unit);
+            if(this.value < t) return -1;
+            else if(this.value > t) return 1;
+            return 0;
+        }
+        lt(other){
+            return this.compare(other) < 0;
+        }
+        gt(other){
+            return this.compare(other) > 0;
+        }
+        le(other){
+            return this.compare(other) <= 0;
+        }
+        ge(other){
+            return this.compare(other) >= 0;
+        }
+        multiply(value){
+            this.value *= value;
+            return this;
+        }
+        divide(value){
+            if(value == 0) throw new Error("Divided by zero");
+            this.value /= value;
             return this;
         }
         toUnit(unit){
@@ -738,7 +790,8 @@ function duiFunc(window, noGlobal) {
             return this;
         }
         equals(width, height) {
-            return equalsTo(["width", "height"], this, width, height);
+            var t = toObject(["width", "height"], width, height);
+            return this.width.equals(new Quant(t.width)) && this.height.equals(new Quant(t.height));
         }
         static New(width, height){
             return new Size(width, height);
@@ -757,7 +810,7 @@ function duiFunc(window, noGlobal) {
             this.top = new Quant(t1.top);
             this.right = new Quant(t1.right);
             this.bottom = new Quant(t1.bottom);
-            if (l.width != undefined || l.height != undefined) {
+            if ((l.right == undefined && l.width != undefined) || (l.bottom == undefined && l.height != undefined)) {
                 var t2 = toObject(["left", "top", "width", "height"], l, t, r, b);
                 if (l.width != undefined) this.right = new Quant(this.left).add(t2.width);
                 if (l.height != undefined) this.bottom = new Quant(this.top).add(t2.height);
@@ -788,39 +841,60 @@ function duiFunc(window, noGlobal) {
     `
     class Rect extends Quad {
         get width() {
-            return this.right - this.left;
+            return new Quant(this.right).sub(this.left);
         }
 
         get height() {
-            return this.bottom - this.top;
+            return new Quant(this.bottom).sub(this.top);
         }
 
         normalize() {
-            if (this.left > this.right) {
+            if (this.left.gt(this.right)) {
                 swap(this, "left", "right");
             }
-            if (this.top > this.bottom) {
+            if (this.top.gt(this.bottom)) {
                 swap(this, "top", "bottom");
             }
             return this;
         }
 
         offset(x, y) {
-            var t = toNumberObject(["x", "y"], x, y);
-            this.left += t.x;
-            this.right += t.x;
-            this.top += t.y;
-            this.bottom += t.y;
+            var t = toObject(["x", "y"], x, y);
+            x = new Quant(t.x);
+            y = new Quant(t.y);
+            this.left.add(x);
+            this.right.add(x);
+            this.top.add(y);
+            this.bottom.add(y);
             return this;
         }
 
-        extend(width, height) {
-            var t = toNumberObject(["width", "height"], width, height);
-            if (this.left <= this.right) this.right += t.width;
-            else this.left -= t.width;
+        add(width, height){
+            var t = toObject(["width", "height"], width, height);
+            if (this.left.le(this.right)) this.right.add(t.width);
+            else this.left.sub(t.width);
 
-            if (this.top <= this.bottom) this.bottom += t.height;
-            else this.top -= t.height;
+            if (this.top.le(this.bottom)) this.bottom.add(t.height);
+            else this.top.sub(t.height);
+            return this;
+        }
+        extend(left, top, right, bottom) {
+            var t = toObject(["left", "top", 'right', 'bottom'], left, top, right, bottom);
+            if (this.left.le(this.right)) {
+                this.left.sub(new Quant(t.left));
+                this.right.add(new Quant(t.right));
+            } else {
+                this.right.sub(new Quant(t.left));
+                this.left.add(new Quant(t.right));
+            }
+
+            if (this.top.le(this.bottom)) {
+                this.top.sub(new Quant(t.top));
+                this.bottom.add(new Quant(t.bottom));
+            } else {
+                this.bottom.sub(new Quant(t.top));
+                this.top.add(new Quant(t.bottom));
+            }
             return this;
         }
 
@@ -982,8 +1056,7 @@ function duiFunc(window, noGlobal) {
     class Lateral {
         constructor(width, style, color) {
             this._lineStyle = "solid"
-            this._width = 0
-            this._unit = 'px';
+            this._width = new Quant(0,'px');
             this._color = new Color(255, 255, 255, 1);
             if(width == null || width == undefined) return;
 
@@ -1014,9 +1087,7 @@ function duiFunc(window, noGlobal) {
 
             var t = toObject(['width', 'style', 'color'], width, style, color);
             if (lineStyles[t.style]) this._lineStyle = t.style;
-            var m = metric(t.width, this._unit);
-            this._width = m.value;
-            this._unit = m.unit;
+            this._width = new Quant(t.width);
             if (t.color) {
                 this._color = new Color(t.color);
             }
@@ -1028,9 +1099,6 @@ function duiFunc(window, noGlobal) {
         get width() {
             return this._width;
         }
-        get unit() {
-            return this._unit;
-        }
         get color() {
             return this._color;
         }
@@ -1039,14 +1107,7 @@ function duiFunc(window, noGlobal) {
                 this._lineStyle = s;
         }
         set width(width) {
-            var m = metric(width, this._unit);
-            this._width = m.value;
-            this._unit = m.unit;
-        }
-        set unit(u) {
-            if (units[u]) {
-                this._unit = u;
-            }
+            this._width = new Quant(width);
         }
         set color(color) {
             this._color = Color.New(color);
@@ -1055,7 +1116,7 @@ function duiFunc(window, noGlobal) {
             return new Lateral(width, style, color);
         }
         get desc(){
-            return `${this.width}${this.unit} ${this.style} ${this.color.name ? this.color.name: this.color.hex}`;
+            return `${this.width.desc} ${this.style} ${this.color.name ? this.color.name: this.color.hex}`;
         }
         equals(width, style, color){
             return equals(this, new Lateral(width, style, color), ['width', 'unit', 'style', 'color']);

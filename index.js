@@ -196,6 +196,36 @@ test("Quad", assert => {
     assert.True(q1.equals(new qd('26px', '42px', 36, 180)));
 });
 
+test("Rect", assert => {
+    let Rect = dui.Rect;
+
+    let r1 = new Rect('10px', '10px', 230, 180);
+    assert.Equals(r1.width.desc, '220px');
+    assert.Equals(r1.height.desc, '170px');
+
+    r1 = new Rect('10px', '10px', -230, -180);
+    assert.Equals(r1.width.desc, '-240px');
+    assert.Equals(r1.height.desc, '-190px');
+
+    r1.normalize();
+    assert.Equals(r1.width.desc, '240px');
+    assert.Equals(r1.height.desc, '190px');
+
+    r1.offset(new dui.Point(230, 180));
+    assert.Equals(r1.width.desc, '240px');
+    assert.Equals(r1.height.desc, '190px');
+    assert.Equals(r1.left.desc, '0px');
+    assert.Equals(r1.top.desc, '0px');
+
+    r1.add(30, 28);
+    assert.Equals(r1.width.desc, '270px');
+    assert.Equals(r1.height.desc, '218px');
+
+    r1.extend(10, 10, -250, -198);
+    assert.Equals(r1.width.desc, '30px');
+    assert.Equals(r1.height.desc, '30px');
+});
+
 test("Color", assert => {
     // rgb
     let c = new dui.Color(200, 12, 33);
