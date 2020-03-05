@@ -1055,7 +1055,7 @@ function duiFunc(window, noGlobal) {
     `
     class Lateral {
         constructor(width, style, color) {
-            this._lineStyle = "solid"
+            this._lineStyle = "none"
             this._width = new Quant(0,'px');
             this._color = new Color(255, 255, 255, 1);
             if(width == null || width == undefined) return;
@@ -1354,6 +1354,8 @@ function duiFunc(window, noGlobal) {
             this.SetColor.apply(this, args);
         }
 
+        
+
         AddChild(child) {
             if (this._children[child.id] != null) {
                 return false;
@@ -1417,7 +1419,7 @@ function duiFunc(window, noGlobal) {
             this._id = this.page.newId;
             var thisElement = document.createElement(this._tag);
             thisElement.id = this._id;
-            thisElement.style.position = "relative";
+            thisElement.style.position = "absolute";
 
             var parentElement = document.getElementById(parent.id);
             parentElement.appendChild(thisElement);
