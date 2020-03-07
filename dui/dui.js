@@ -1312,7 +1312,6 @@ function duiFunc(window, noGlobal) {
     }
     ////////////////////////////////////////////////////////////////////
 
-
     help.Page = `
     class Page
         represents html
@@ -1342,8 +1341,8 @@ function duiFunc(window, noGlobal) {
 
         init() {
             document.body.id = this.newId;
-            this._mainWnd = new Wnd(this);
-            this._mainWnd.Create(null);
+            this._mainWnd = new Wnd();
+            this._mainWnd.Create(this);
             return this;
         }
 
@@ -1395,9 +1394,9 @@ function duiFunc(window, noGlobal) {
         ////////////////////////////////
         // constructor
         // a wnd must be belong to a page
-        constructor(page = null, tag = "div") {
+        constructor(tag = 'div') {
             this._id = "0";
-            this._page = page;
+            this._page = null;
             this._parent = null;
             this._children = {};
             this._zorder = [];
@@ -1560,23 +1559,48 @@ function duiFunc(window, noGlobal) {
         }
 
         SetAttributes(attributes) {
-            if (typeof attributes != 'object' || !(attributes instanceof Object) || attributes instanceof Array) {
-                if (arguments.length == 2 && typeof attributes == 'string') {
-                    attributes = { [attributes]: arguments[1] };
-                } else {
-                    log("Invalid parameters");
-                    return;
+            try {
+                if (typeof attributes != 'object' || !(attributes instanceof Object)) {
+                    if (arguments.length > 1) {
+                        if(arguments.length % 2 == 0) {
+                            var temp = {};
+                            for(var i = 0; i < arguments.length; i += 2) {
+                                if(typeof arguments[i] != "string") throw new Error("Odd parameters should be strings");
+                                temp[arguments[i]] = arguments[i + 1];
+                            }
+                            attributes = temp;
+                        } else {
+                            throw new Error("Even number of parameters required");
+                        }
+                    } else {
+                        attributes = JSON.parse(attributes);
+                        return this.SetAttributes(attributes);
+                    }
+                } else if(attributes instanceof Array) {
+                    if(attributes.length % 2 == 0) {
+                        var temp = {};
+                        for(var i = 0; i < attributes.length; i += 2) {
+                            if(typeof attributes[i] != "string") throw new Error("Odd parameters should be strings");
+                            temp[attributes[i]] = attributes[i + 1];
+                        }
+                        attributes = temp;
+                    } else {
+                        throw new Error("Even number of array elements required");
+                    }
                 }
-            }
 
-            Object.keys(attributes).forEach(attr => {
-                var setter = this.constructor.prototype.__lookupSetter__(attr);
-                if (setter == undefined) {
-                    log(`Attribute "${attr} is not defined in ${this.constructor.name}"`);
-                    return;
-                }
-                this[attr] = attributes[attr];
-            });
+                Object.keys(attributes).forEach(attr => {
+                    var setter = this.constructor.prototype.__lookupSetter__(attr);
+                    if (setter == undefined) {
+                        log(`Attribute "${attr} is not defined in ${this.constructor.name}"`);
+                        return;
+                    }
+                    this[attr] = typeof attributes[attr] == 'function' ? attributes[attr]() : attributes[attr];
+                });
+            } catch(e){
+                log(e);
+                return false;
+            }
         }
 
         onSize(event){
@@ -1588,8 +1612,8 @@ function duiFunc(window, noGlobal) {
         Create(parent) {
             // if parent is null or undefined,
             // set this wnd to html body
-            if (!parent) {
-                if (!this._page || !(this._page instanceof Page)) return false;
+            if (parent instanceof Page) {
+                this._page = parent;
                 this._id = document.body.id.toString();
                 this._tag = "body";
                 document.body.onresize = this.onSize;
@@ -1695,22 +1719,48 @@ function duiFunc(window, noGlobal) {
                 left+=child.width;
             });
         }
-    }
-
-    class Div extends Wnd {
-        get text() {
+        get title() {
             this.element.innerText;
         }
-        set text(text) {
+        set title(text) {
             this.element.innerText = text;
         }
-        onClick(){
-            console.log("You clicked a Div");
+    }
+
+    help.DropDown = `
+    class Dropdown
+    `
+    class Dropdown extends Wnd{
+        constructor(){
+            super('select');
+        }
+        Create(parent, items){
+            if(!super.Create(parent)){
+                return false;
+            }
+            this.AddItems(items);
+            return true;
+        }
+        AddItems(items){}
+        AddItem(parent, item){
+
+        }
+        static CreateNew(parent, data){
+            return CreateWnd(Dropdown, parent, data);
+        }
+    }
+
+    function CreateWnd(wndClass, parent, ...args){
+        var wnd = new wndClass();
+        args.unshift(parent);
+        if(wnd.Create.apply(wnd, args)){
+            return wnd;
+        } else {
+            return null;
         }
     }
 
     var dui = function () {
-
     }
 
     class Assert{
@@ -1783,9 +1833,10 @@ function duiFunc(window, noGlobal) {
     dui.Border = Border;
     dui.Page = Page;
     dui.Wnd = Wnd;
-    dui.Div = Div;
+    dui.Dropdown = Dropdown;
     
     dui.createTestWnd = createTestWnd;
+    dui.CreateWnd = CreateWnd;
 
     function test(name, func){
         var assert = new Assert(name);
@@ -1796,7 +1847,7 @@ function duiFunc(window, noGlobal) {
     function createTestWnd(){
         dui.testMainPage = Page.New();
         dui.testMainWnd = dui.testMainPage.mainWnd;
-        dui.testChildWnd = Wnd.CreateNew(dui.testMainWnd, Div);
+        dui.testChildWnd = Wnd.CreateNew(dui.testMainWnd, Wnd);
         dui.testChildWnd.width = 300;
         dui.testChildWnd.height = 300;
         dui.testChildWnd.bgdClr = "blue";

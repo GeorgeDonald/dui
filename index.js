@@ -7,17 +7,6 @@ let dui = require("dui")(window);
 let test = dui.test;
 let document = window.document;
 
-// {
-//     let units = dui.units;
-//     let obj = {};
-//     Object.keys(units).forEach(u1 => {
-//         Object.keys(units).forEach(u2 => {
-//             obj[u1+" "+u2] = "function(v1, v2) {return v1 + v2}";
-//         });
-//     });
-//     console.log(JSON.stringify(obj, null, "    "));
-// }
-
 test("toNumber", (assert) => {
     assert.Equals(dui.toNumber("10"), 10);
     assert.Equals(dui.toNumber(33), 33);
@@ -383,6 +372,14 @@ test("Page", assert => {
     child1.Destroy();
     assert.IsNull(document.getElementById(child1.id))
     assert.IsNull(child1.element);
+});
+
+test('Dropdown', assert => {
+    let Page = dui.Page;
+
+    let p = Page.New();
+    let cwd = dui.CreateWnd(dui.Dropdown, p.mainWnd, {});
+    assert.NotNull(cwd);
 });
 
 console.log("✌️✌️✌️ All tests finished successfully !!!!!! ✌️✌️✌️")
