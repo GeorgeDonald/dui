@@ -1789,6 +1789,37 @@ function duiFunc(window, noGlobal) {
         } else return null;
     }
 
+    function DropdownItem(){
+        var wnd = Wnd("option");
+        wnd.__defineGetter__("value", () => {
+            return wnd.element.value;
+        });
+        wnd.__defineGetter__("text", () => {
+            return wnd.element.text;
+        });
+        wnd.__defineSetter__("value", (value) => {
+            wnd.element.value = value;
+        });
+        wnd.__defineSetter__("text", (text) => {
+            wnd.element.text = text;
+        });
+
+        var superCreate = wnd.Create;
+        wnd.Create = (parent, value, text) => {
+            if(!parent || !(parent instanceof parent.Wnd)) return false;
+            if(!superCreate.apply(wnd, [parent])){
+                return false;
+            }
+
+            var t = toObject(['value', 'text'], value, text);
+            wnd.value = t.value;
+            wnd.text = t.text;
+            return true;
+        }
+
+        return wnd;
+    }
+
     help.DropDown = `
     Dropdown
     `
@@ -1804,8 +1835,15 @@ function duiFunc(window, noGlobal) {
             return true;
         }
         wnd.AddItems = (items) => {}
-        wnd.AddItem = (parent, item) => {
+        wnd.AddGroup = (name) => {
 
+        }
+        wnd.AddItem = (parent, ...args) => {
+            if(!(parent instanceof parent.Wnd)) {
+                args.unshift(parent);
+                parent = wnd;
+            }
+            return CreateWnd(DropdownItem, parent, args)
         }
 
         return wnd;
