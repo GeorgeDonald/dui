@@ -1789,6 +1789,29 @@ function duiFunc(window, noGlobal) {
         } else return null;
     }
 
+    function DropdownGroup(){
+        var wnd = Wnd("optgroup");
+        wnd.__defineGetter__("label", () => {
+            return wnd.element.label;
+        });
+        wnd.__defineSetter__("label", (label) => {
+            wnd.element.label = label;
+        });
+
+        var superCreate = wnd.Create;
+        wnd.Create = (parent, label) => {
+            if(!parent || !(parent instanceof parent.Wnd)) return false;
+            if(!superCreate.apply(wnd, [parent])){
+                return false;
+            }
+
+            wnd.label = label;
+            return true;
+        }
+
+        return wnd;
+    }
+
     function DropdownItem(){
         var wnd = Wnd("option");
         wnd.__defineGetter__("value", () => {
@@ -1811,7 +1834,7 @@ function duiFunc(window, noGlobal) {
                 return false;
             }
 
-            var t = toObject(['value', 'text'], value, text);
+            var t = toObject(['value', 'text', 'selected'], value, text, selected);
             wnd.value = t.value;
             wnd.text = t.text;
             return true;
@@ -1834,9 +1857,27 @@ function duiFunc(window, noGlobal) {
             wnd.AddItems(items);
             return true;
         }
-        wnd.AddItems = (items) => {}
+        wnd.AddItems = (items) => {
+            if(!items || (typeof items != 'string' && !(items instanceof Object))) return;
+            if(typeof items == 'string') return wnd.AddItems(JSON.parse(items));
+            if(items instanceof Array){
+                for(var item of items){
+                    if(typeof item == 'string'){
+                        wnd.AddItem(wnd, item);
+                    } else if(item instanceof Array){
+                        wnd.AddItem(wnd, item[0], item[1], item[2]);
+                    } else if(item instanceof Object){
+                        wnd.AddItem(wnd, item.value, item.text, item[2]);
+                    }
+                }
+            } else{
+                Object.keys(items).forEach(key => {
+                    item = items[key];
+                });
+            }
+        }
         wnd.AddGroup = (name) => {
-
+            return CreateWnd(DropdownGroup, wnd, name);
         }
         wnd.AddItem = (parent, ...args) => {
             if(!(parent instanceof parent.Wnd)) {
