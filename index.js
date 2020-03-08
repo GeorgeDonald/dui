@@ -115,38 +115,38 @@ test("metric", assert => {
 
 test("Qunant", assert => {
     let Quant = dui.Quant;
-    let q = Quant.New();
-    assert.True(q.equals(new Quant()));
+    let q = Quant();
+    assert.True(q.equals(Quant()));
 
-    q = Quant.New(new Quant("19mm"));
+    q = Quant(Quant("19mm"));
     assert.Equals(q.value, 19);
     assert.Equals(q.unit, 'mm');
 
-    q = Quant.New(18, "pc");
+    q = Quant(18, "pc");
     assert.Equals(q.value, 18);
     assert.Equals(q.unit, 'pc');
 
-    q = dui.metric(Quant.New("28", "%"));
+    q = dui.metric(Quant("28", "%"));
     assert.Equals(q.value, 28);
     assert.Equals(q.unit, '%');
 
-    q = Quant.New("alsdkjf;aslf", 0);
+    q = Quant("alsdkjf;aslf", 0);
     assert.Equals(q.value, 0);
     assert.Equals(q.unit, 'px');
 
-    q = Quant.New("10px");
+    q = Quant("10px");
     q.add("10px");
     assert.Equals(q.desc, "20px");
 
     q.add("-2px")
     assert.Equals(q.desc, "18px");
 
-    assert.True(q.equals(new Quant("18px")));
+    assert.True(q.equals(Quant("18px")));
 });
 
 test("Point", assert => {
-    let p1 = new dui.Point(31, 28);
-    let p2 = dui.Point.New({y: "28", x: "31"});
+    let p1 = dui.Point(31, 28);
+    let p2 = dui.Point({y: "28", x: "31"});
     assert.True(p1.equals(p2));
     assert.Equals(p1, p2);
 
@@ -156,7 +156,7 @@ test("Point", assert => {
     assert.True(p1.equals(p2.offset(10, 10)));
     assert.Equals(p1, p2);
 
-    p1.offset(dui.Point.New(13, 17));
+    p1.offset(dui.Point(13, 17));
     assert.False(p1.equals(p2));
     assert.NotEquals(p1, p2);
     assert.True(p1.equals(p2.offset(new dui.Point(13, 17))));
@@ -164,20 +164,20 @@ test("Point", assert => {
 });
 
 test("Size", assert => {
-    let s1 = new dui.Size(88, 67);
-    let s2 = new dui.Size(88, 67);
+    let s1 = dui.Size(88, 67);
+    let s2 = dui.Size(88, 67);
     assert.True(s1.equals(s2));
     assert.Equals(s1, s2);
 
     s1.add(12,33);
     assert.False(s1.equals(s2));
     assert.NotEquals(s1, s2);
-    assert.True(s1.equals(dui.Size.New(new dui.Size(100, 100))));
+    assert.True(s1.equals(dui.Size(dui.Size(100, 100))));
 });
 
 test("Quad", assert => {
     let qd = dui.Quad;
-    let q1 = qd.New("13px", "21px", "18px", "90px");
+    let q1 = qd("13px", "21px", "18px", "90px");
     let q2 = new qd(q1);
     assert.True(q1.equals(q2));
 
@@ -188,7 +188,7 @@ test("Quad", assert => {
 test("Rect", assert => {
     let Rect = dui.Rect;
 
-    let r1 = new Rect('10px', '10px', 230, 180);
+    let r1 = Rect('10px', '10px', 230, 180);
     assert.Equals(r1.width.desc, '220px');
     assert.Equals(r1.height.desc, '170px');
 
@@ -216,83 +216,85 @@ test("Rect", assert => {
 });
 
 test("Color", assert => {
+    let Color = dui.Color;
     // rgb
-    let c = new dui.Color(200, 12, 33);
+    let c = Color(200, 12, 33);
     c.r = 322;
     assert.Equals(c.r, 255);
 
-    c = new dui.Color()
-    assert.True(c.equals(new dui.Color(0,0,0)));
+    c = Color()
+    assert.True(c.equals(Color(0,0,0)));
 
     // rgb string
-    c = new dui.Color("rgb(255,255,255)")
-    assert.True(c.equals(new dui.Color(255,255,255)));
+    c = Color("rgb(255,255,255)")
+    assert.True(c.equals(Color(255,255,255)));
 
     // name
     Object.keys(dui.namedColors).forEach(cn => {
-        assert.True(dui.Color.New(cn).equals(new dui.Color(dui.namedColors[cn])));
+        assert.True(Color(cn).equals(Color(dui.namedColors[cn])));
     });
 
     // hex string
-    c = new dui.Color("#0f")
-    assert.True(c.equals(new dui.Color(15,15,15)));
+    c = Color("#0f")
+    assert.True(c.equals(Color(15,15,15)));
 
-    c = new dui.Color("#a")
-    assert.True(c.equals(new dui.Color(10,10,10)));
+    c = Color("#a")
+    assert.True(c.equals(Color(10,10,10)));
 
-    c = new dui.Color("#fe3")
-    assert.True(c.equals(new dui.Color(0xff,0xee,0x33)));
+    c = Color("#fe3")
+    assert.True(c.equals(Color(0xff,0xee,0x33)));
 
-    c = new dui.Color("#122232")
-    assert.True(c.equals(new dui.Color(18,34,50)));
+    c = Color("#122232")
+    assert.True(c.equals(Color(18,34,50)));
 
     // number string
-    c = new dui.Color("32", "128", "99")
-    assert.True(c.equals(new dui.Color(32,128,99)));
+    c = Color("32", "128", "99")
+    assert.True(c.equals(Color(32,128,99)));
     assert.Equals(c.hex, "#208063");
     assert.Equals(c.rgb, "rgb(32, 128, 99)");
-    assert.Equals(c.rgba, "rgb(32, 128, 99, 1)");
+    assert.Equals(c.rgba, "rgba(32, 128, 99, 1)");
     assert.Equals(c.name, undefined);
 
     Object.keys(dui.namedColors).forEach(cn => {
-        let name = dui.Color.New(cn).name;
+        let name = Color(cn).name;
         assert.NotNull(name);
-        assert.True(dui.Color.New(name).equals(dui.Color.New(cn)));
+        assert.True(Color(name).equals(Color(cn)));
     });
 });
 
 test("Lateral", assert => {
-    let l = dui.Lateral.New();
+    let Lateral = dui.Lateral;
+    let l = Lateral();
     assert.Equals(l.style, "none");
     assert.Equals(l.width.desc, '0px');
     assert.Equals(l.color.name, "Black");
 
-    l = dui.Lateral.New(3, "double", "white");
+    l = Lateral(3, "double", "white");
     assert.Equals(l.style, "double");
     assert.Equals(l.width.desc, '3px');
     assert.Equals(l.color.name, "White");
 
-    l = dui.Lateral.New(l);
+    l = Lateral(l);
     assert.Equals(l.style, "double");
     assert.Equals(l.width.desc, "3px");
     assert.Equals(l.color.name, "White");
 
-    l = dui.Lateral.New("3px", "dotted", "white");
+    l = Lateral("3px", "dotted", "white");
     assert.Equals(l.style, "dotted");
     assert.Equals(l.width.desc, "3px");
     assert.Equals(l.color.name, "White");
 
-    l = dui.Lateral.New("0.3in", "dashed", "aqua");
+    l = Lateral("0.3in", "dashed", "aqua");
     assert.Equals(l.style, "dashed");
     assert.Equals(l.width.desc, '0.3in');
     assert.Equals(l.color.name, "Aqua");
 
-    l = dui.Lateral.New("aqua", "dashed", "0.3in");
+    l = Lateral("aqua", "dashed", "0.3in");
     assert.Equals(l.style, "dashed");
     assert.Equals(l.width.desc, '0.3in');
     assert.Equals(l.color.name, "Aqua");
 
-    l = dui.Lateral.New("0.13in");
+    l = Lateral("0.13in");
     assert.Equals(l.style, "none");
     assert.Equals(l.width.desc, '0.13in');
     assert.Equals(l.color.name, "Black");
@@ -321,17 +323,17 @@ test("Lateral", assert => {
 
 test("Border", assert => {
     let Border = dui.Border;
-    let b1 = new Border();
+    let b1 = Border();
     assert.True(b1.left.equals('0px'));
 
-    b1 = new Border('1px solid yellow');
+    b1 = Border('1px solid yellow');
     assert.True(b1.left.equals(b1.top));
     assert.True(b1.left.equals(b1.right));
     assert.True(b1.left.equals(b1.bottom));
-    assert.True(b1.left.equals(new dui.Lateral(1, "solid", "yellow")));
+    assert.True(b1.left.equals(dui.Lateral(1, "solid", "yellow")));
     assert.Equals(b1.desc, '1px solid Yellow');
     
-    let b2 = Border.New("Yellow solid 1");
+    let b2 = Border("Yellow solid 1");
     assert.Equals(b1, b2);
 });
 
@@ -339,7 +341,7 @@ test("Page", assert => {
     let Page = dui.Page;
     let Wnd = dui.Wnd;
 
-    let page = Page.New();
+    let page = Page();
     let mainWnd = page.mainWnd;
     let child1 = Wnd.CreateNew(mainWnd);
     assert.NotNull(document.getElementById(child1.id));
@@ -377,7 +379,7 @@ test("Page", assert => {
 test('Dropdown', assert => {
     let Page = dui.Page;
 
-    let p = Page.New();
+    let p = Page();
     let cwd = dui.CreateWnd(dui.Dropdown, p.mainWnd, {});
     assert.NotNull(cwd);
 });

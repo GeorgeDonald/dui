@@ -522,6 +522,7 @@ function duiFunc(window, noGlobal) {
             names = [names];
         }
         return names.every(v => {
+            if(typeof obj1[v] == 'function') return true;
             if(typeof obj1[v].equals == 'function') {
                 return obj1[v].equals(obj2[v]);
             } else return equals(obj1[v], obj2[v])
@@ -737,38 +738,83 @@ function duiFunc(window, noGlobal) {
     // basic classes
 
     help.Quant = `
-    class Quantity
+    Quantity
         represents (value, unit)
     `
-    class Quant {
-        constructor(value, unit){
-            this.value = 0;
-            this.unit = 'px';
-            if(!value) return;
+    function Quant(value, unit) {
+        var _value = 0;
+        var _unit = 'px';
 
-            if(typeof value == "string"){
-                var t = metric(value, unit ? unit : "px");
-                value = t.value;
-                unit = t.unit;
+        var quant = {
+            get value(){
+                return _value;
+            },
+            set value(v){
+                var t = Quant(v, _unit);
+                _value = t.value;
+                _unit = t.unit;
+            },
+            get unit() {
+                return _unit;
+            },
+            set unit(u){
+                u = units[u];
+                if(u) _unit = u;
+            },
+            get desc(){
+                return `${_value}${_unit}`;
+            },
+            equals(...args){
+                var q = Quant.apply(null, args);
+                var t = Quant(this).toUnit(q.unit);
+                return equals({value: t.value, unit: t.unit}, q, ['value', 'unit']);
+            },
+            add(value, unit, totalWidth, totalWidthUnit){
+                return addWidthUnit(value, unit, totalWidth, totalWidthUnit, false);
+            },
+            sub(value, unit, totalWidth, totalWidthUnit){
+                return addWidthUnit(value, unit, totalWidth, totalWidthUnit, true);
+            },
+            oppsite(){
+                _value = -_value;
+                return this;
+            },
+            compare(...args){
+                var other = Quant.apply(null, args);
+                var t = convertUnit(other.value, other.unit, _unit);
+                if(_value < t) return -1;
+                else if(_value > t) return 1;
+                return 0;
+            },
+            lt(other){
+                return this.compare(other) < 0;
+            },
+            gt(other){
+                return this.compare(other) > 0;
+            },
+            le(other){
+                return this.compare(other) <= 0;
+            },
+            ge(other){
+                return this.compare(other) >= 0;
+            },
+            multiply(value){
+                _value *= toNumber(value);
+                return this;
+            },
+            divide(value){
+                value = toNumber(value);
+                if(value == 0) throw new Error("Divided by zero");
+                this.value /= value;
+                return this;
+            },
+            toUnit(unit){
+                _value = convertUnit(_value, unit);
+                _unit = unit;
+                return this;
             }
-            var t = toObject(['value', 'unit'], value, unit);
-            this.value = toNumber(t.value);
-            this.unit = typeof t.unit == 'string' ? units[t.unit.toLowerCase()]: undefined;
-            if(!this.unit){
-                this.unit = "px";
-            }
         }
-        get desc(){
-            return `${this.value}${this.unit}`;
-        }
-        equals(...args){
-            var q = Quant.New.apply(null, args);
-            return equals(this.toUnit(q.unit), q, ['value', 'unit']);
-        }
-        static New(value, unit){
-            return new Quant(value, unit);
-        }
-        add(value, unit, totalWidth, totalWidthUnit, sub){
+        function addWidthUnit(value, unit, totalWidth, totalWidthUnit, sub){
             if(typeof unit != 'string' || !units[unit]) {
                 var t = metric(value);
                 if(uon(totalWidth)){
@@ -784,89 +830,80 @@ function duiFunc(window, noGlobal) {
                 totalWidthUnit = tt.unit;
             }
 
-            var t = new Quant(value, unit);
+            var t = Quant(value, unit);
+            var o = {value: _value, unit: _unit};
             var total = {value: totalWidth, unit: totalWidthUnit};
-            valarizeRate(this, total);
+            valarizeRate(o, total);
             valarizeRate(t, total)
 
-            t = convertUnit(t.value, t.unit, this.unit);
-            if(sub != true) this.value += t;
-            else this.value -= t;
-            return this;
+            t = convertUnit(t.value, t.unit, o.unit);
+            if(sub != true) _value += t;
+            else _value -= t;
+            if(_unit == '%') _alue /= totalWidth;
+            return quant;
         }
-        sub(value, unit, totalWidth, totalWidthUnit){
-            return this.add(value, unit, totalWidth, totalWidthUnit, true);
+
+        if(!nou(value)) {
+            if(typeof value == "string"){
+                var t = metric(value, unit ? unit : "px");
+                value = t.value;
+                unit = t.unit;
+            }
+            var t = toObject(['value', 'unit'], value, unit);
+            _value = toNumber(t.value);
+            _unit = typeof t.unit == 'string' ? units[t.unit.toLowerCase()]: undefined;
+            if(!_unit){
+                _unit = "px";
+            }
         }
-        oppsite(){
-            this.value = -this.value;
-            return this;
-        }
-        compare(other){
-            if(!(other instanceof Quant))throw new Error('Invalid parameter');
-            var t = convertUnit(other.value, other.unit, this.unit);
-            if(this.value < t) return -1;
-            else if(this.value > t) return 1;
-            return 0;
-        }
-        lt(other){
-            return this.compare(other) < 0;
-        }
-        gt(other){
-            return this.compare(other) > 0;
-        }
-        le(other){
-            return this.compare(other) <= 0;
-        }
-        ge(other){
-            return this.compare(other) >= 0;
-        }
-        multiply(value){
-            this.value *= value;
-            return this;
-        }
-        divide(value){
-            if(value == 0) throw new Error("Divided by zero");
-            this.value /= value;
-            return this;
-        }
-        toUnit(unit){
-            this.value = convertUnit(this.value, unit);
-            this.unit = unit;
-            return this;
-        }
+        return quant;
     }
 
     help.Point = `
-    class Point
+    Point
         represents a (x, y) pair
         constructor(x: number or number string or Point or object like {x: 1, y: 2}, y: optional, number or number string)
         offset(x: number or Point, y: optional number)
             move Point to (Point.x + x, Point.y + y)
     `
-    class Point {
-        constructor(x, y) {
-            var t = toObject(["x", "y"], x, y);
-            this.x = new Quant(t.x);
-            this.y = new Quant(t.y);
-        }
-        offset(x, y) {
-            var t = new Point(x, y);
-            this.x.add(t.x);
-            this.y.add(t.y);
-            return this;
-        }
-        equals(x, y) {
-            return equalsTo(['x', 'y'], this, x, y);
-        }
-        static New(x, y){
-            return new Point(x, y);
+    function Point(x, y) {
+        var _x;
+        var _y;
+        var t = toObject(["x", "y"], x, y);
+        _x = Quant(t.x);
+        _y = Quant(t.y);
+
+        return {
+            get x(){
+                return _x;
+            },
+            set x(x){
+                _x = Quant(x);
+            },
+            get y(){
+                return _y;
+            },
+            set y(y){
+                _y = Quant(y);
+            },
+            offset(x, y) {
+                var t = Point(x, y);
+                _x.add(t.x);
+                _y.add(t.y);
+                return this;
+            },
+            equals(x, y) {
+                return equalsTo(['x', 'y'], this, x, y);
+            }
         }
     }
 
-    class Position extends Point { }
+    function Position(x, y) {
+        return Point(x, y);
+    }
 
     help.Size = `
-    class Size
+    Size
         represents (width, height) pair
         constructor(width: number or number string or Point or object like {x: 1, y: 2}, height: optional number or number string)
         add(width: number or Size, y: optional number)
@@ -874,143 +911,184 @@ function duiFunc(window, noGlobal) {
         normalize:
             make sure width and height are positive. if not, change it to it's absolute value
     `
-    class Size {
-        constructor(width, height) {
-            var t = toObject(["width", "height"], width, height);
-            this.width = new Quant(t.width);
-            this.height = new Quant(t.height);
-        }
-        add(width, height) {
-            var t = toObject(["width", "height"], width, height);
-            this.width.add(t.width);
-            this.height.add(t.height);
-            return this;
-        }
-        normalize() {
-            if (this.width.value < 0) this.width.value = -this.width.value;
-            if (this.height.value < 0) this.height.value = -this.height.value;
-            return this;
-        }
-        equals(width, height) {
-            var t = toObject(["width", "height"], width, height);
-            return this.width.equals(new Quant(t.width)) && this.height.equals(new Quant(t.height));
-        }
-        static New(width, height){
-            return new Size(width, height);
+    function Size(width, height) {
+        var _width;
+        var _height;
+        var t = toObject(["width", "height"], width, height);
+        _width = Quant(t.width);
+        _height = Quant(t.height);
+
+        return {
+            get width(){
+                return _width;
+            },
+            set width(width){
+                _width = Quant(width);
+            },
+            get height(){
+                return _height;
+            },
+            set height(height){
+                _height = Quant(height);
+            },
+            add(width, height) {
+                var t = toObject(["width", "height"], width, height);
+                _width.add(t.width);
+                _height.add(t.height);
+                return this;
+            },
+            normalize() {
+                if (_width.value < 0) _width.value = -_width.value;
+                if (_height.value < 0) _height.value = -_height.value;
+                return this;
+            },
+            equals(width, height) {
+                var t = toObject(["width", "height"], width, height);
+                return _width.equals(Quant(t.width)) && _height.equals(Quant(t.height));
+            },
         }
     }
 
     help.Quad = `
-    class Quad
+    Quad
         represents (left, top, right, bottom)
         constructor(left: number or Rect, top: optional number, right, bottom)
     `
-    class Quad{
-        constructor(l, t, r, b) {
-            var t1 = toObject(["left", "top", "right", "bottom"], l, t, r, b);
-            this.left = new Quant(t1.left);
-            this.top = new Quant(t1.top);
-            this.right = new Quant(t1.right);
-            this.bottom = new Quant(t1.bottom);
-            if ((l.right == undefined && l.width != undefined) || (l.bottom == undefined && l.height != undefined)) {
-                var t2 = toObject(["left", "top", "width", "height"], l, t, r, b);
-                if (l.width != undefined) this.right = new Quant(this.left).add(t2.width);
-                if (l.height != undefined) this.bottom = new Quant(this.top).add(t2.height);
+    function Quad(left, top, right, bottom) {
+        var _left, _top, _right, _bottom;
+
+        var t1 = toObject(["left", "top", "right", "bottom"], left, top, right, bottom);
+        _left = Quant(t1.left);
+        _top = Quant(t1.top);
+        _right = Quant(t1.right);
+        _bottom = Quant(t1.bottom);
+        if ((left.right == undefined && left.width != undefined) || (left.bottom == undefined && left.height != undefined)) {
+            var t2 = toObject(["left", "top", "width", "height"], left);
+            if (left.right == undefined && left.width != undefined) _right = Quant(_left).add(t2.width);
+            if (left.bottom == undefined && left.height != undefined) _bottom = Quant(_top).add(t2.height);
+        }
+
+        return {
+            get left(){
+                return _left;
+            },
+            set left(value) {
+                _left = Quant(value);
+            },
+            get top(){
+                return _top;
+            },
+            set top(value) {
+                _top = Quant(value);
+            },
+            get right(){
+                return _right;
+            },
+            set right(value) {
+                _right = Quant(value);
+            },
+            get bottom(){
+                return _bottom;
+            },
+            set bottom(value) {
+                _bottom = Quant(value);
+            },
+            add(left, top, right, bottom) {
+                var t = toObject(["left", "top", "right", "bottom"], left, top, right, bottom);
+                _left.add(Quant(t.left));
+                _top.add(Quant(t.top));
+                _right.add(Quant(t.right));
+                _bottom.add(Quant(t.bottom));
+                return this;
+            },
+            equals(left, top, right, bottom) {
+                return equals({left: _left, top: _top, right: _right, bottom: _bottom}, 
+                    Quad(left, top, right, bottom), ["left", "top", "right", "bottom"]);
             }
-        }
-
-        add(left, top, right, bottom) {
-            var t = toObject(["left", "top", "right", "bottom"], left, top, right, bottom);
-            this.left.add(t.left);
-            this.top.add(t.top);
-            this.right.add(t.right);
-            this.bottom.add(t.bottom);
-            return this;
-        }
-
-        equals(left, top, right, bottom) {
-            return equals(this, new Quad(left, top, right, bottom), ["left", "top", "right", "bottom"]);
-        }
-
-        static New(left, top, right, bottom){
-            return new Quad(left, top, right, bottom);
         }
     }
 
     help.Rect = `
-    class Rect
+    Rect
         represents a rect of two points: (left, top) and (right, bottom)
     `
-    class Rect extends Quad {
-        get width() {
-            return new Quant(this.right).sub(this.left);
-        }
+    function Rect(left, top, right, bottom) {
+        var quad = Quad(left, top, right, bottom);
+        
+        quad.__defineGetter__('width', () =>
+        {
+            return Quant(quad.right).sub(quad.left);
+        });
 
-        get height() {
-            return new Quant(this.bottom).sub(this.top);
-        }
+        quad.__defineGetter__('height', () => {
+            return Quant(quad.bottom).sub(quad.top);
+        });
 
-        normalize() {
-            if (this.left.gt(this.right)) {
-                swap(this, "left", "right");
+        quad.normalize = () => {
+            if (quad.left.gt(quad.right)) {
+                swap(quad, "left", "right");
             }
-            if (this.top.gt(this.bottom)) {
-                swap(this, "top", "bottom");
+            if (quad.top.gt(quad.bottom)) {
+                swap(quad, "top", "bottom");
             }
-            return this;
-        }
+            return quad;
+        };
 
-        offset(x, y) {
+        quad.offset = (x, y) => {
             var t = toObject(["x", "y"], x, y);
-            x = new Quant(t.x);
-            y = new Quant(t.y);
-            this.left.add(x);
-            this.right.add(x);
-            this.top.add(y);
-            this.bottom.add(y);
-            return this;
-        }
+            x = Quant(t.x);
+            y = Quant(t.y);
+            quad.left.add(x);
+            quad.right.add(x);
+            quad.top.add(y);
+            quad.bottom.add(y);
+            return quad;
+        };
 
-        add(width, height){
+        quad.add = (width, height) => {
             var t = toObject(["width", "height"], width, height);
-            if (this.left.le(this.right)) this.right.add(t.width);
-            else this.left.sub(t.width);
+            if (quad.left.le(quad.right)) quad.right.add(t.width);
+            else quad.left.sub(t.width);
 
-            if (this.top.le(this.bottom)) this.bottom.add(t.height);
-            else this.top.sub(t.height);
-            return this;
+            if (quad.top.le(quad.bottom)) quad.bottom.add(t.height);
+            else quad.top.sub(t.height);
+            return quad;
         }
-        extend(left, top, right, bottom) {
+
+        quad.extend = (left, top, right, bottom) => {
             var t = toObject(["left", "top", 'right', 'bottom'], left, top, right, bottom);
-            if (this.left.le(this.right)) {
-                this.left.sub(new Quant(t.left));
-                this.right.add(new Quant(t.right));
+            if (quad.left.le(quad.right)) {
+                quad.left.sub(Quant(t.left));
+                quad.right.add(Quant(t.right));
             } else {
-                this.right.sub(new Quant(t.left));
-                this.left.add(new Quant(t.right));
+                quad.right.sub(Quant(t.left));
+                quad.left.add(Quant(t.right));
             }
 
-            if (this.top.le(this.bottom)) {
-                this.top.sub(new Quant(t.top));
-                this.bottom.add(new Quant(t.bottom));
+            if (quad.top.le(quad.bottom)) {
+                quad.top.sub(Quant(t.top));
+                quad.bottom.add(Quant(t.bottom));
             } else {
-                this.bottom.sub(new Quant(t.top));
-                this.top.add(new Quant(t.bottom));
+                quad.bottom.sub(Quant(t.top));
+                quad.top.add(Quant(t.bottom));
             }
-            return this;
+            return quad;
         }
 
-        static New(left, top, right, bottom){
-            return new Rect(left, top, right, bottom);
-        }
+        return quad;
     }
 
     help.Color = `
-    class Color
+    Color
         represents a color: (red, green, blue, alpha)
     `
-    class Color {
-        static GetColorValue(c) {
+    function Color(red, green, blue, alpha = 1) {
+        var _red = 0;
+        var _green = 0;
+        var _blue = 0;
+        var _alpha = 1;
+
+        function GetColorValue(c) {
             if (typeof c == "string") {
                 var re = /^\s*#([0-9a-fA-F]{1,2})\s*$/g;
                 var rlt = re.exec(c);
@@ -1023,731 +1101,718 @@ function duiFunc(window, noGlobal) {
             else return 0;
         }
 
-        static New(red, green, blue, alpha = 1) {
-            return new Color(red, green, blue, alpha);
+        var rtn = {
+            get red() {
+                return _red;
+            },
+            get r() {
+                return _red;
+            },
+            set red(r) {
+                _red = GetColorValue(r);
+            },
+            set r(r) {
+                this.red = r;
+            },
+            get green() {
+                return _green;
+            },
+            get g() {
+                return _green;
+            },
+            set green(g) {
+                _green = GetColorValue(g);
+            },
+            set g(g) {
+                this.green = g;
+            },
+            get blue() {
+                return _blue;
+            },
+            get b() {
+                return _blue;
+            },
+            set blue(b) {
+                _blue = GetColorValue(b);
+            },
+            set b(b) {
+                this.blue = b;
+            },
+            get alpha() {
+                return _alpha;
+            },
+            get a() {
+                return _alpha;
+            },
+            set alpha(a) {
+                _alpha = GetColorValue(a > 1 ? 1 : a < 0 ? 0 : a);
+            },
+            set a(a) {
+                this.alpha = a;
+            },
+            equals(...other) {
+                return equalsTo(['red', 'green', 'blue', 'alpha'], {red: _red, green: _green, blue: _blue, alpha: _alpha}, 
+                    Color.apply(null, other));
+            },
+            get hex(){
+                return `#${this.r.toString(16).toUpperCase().padStart(2,"0")}${this.g.toString(16).toUpperCase().padStart(2,"0")}${this.b.toString(16).toUpperCase().padStart(2,"0")}`
+            },
+            get rgb(){
+                return `rgb(${this.r}, ${this.g}, ${this.b})`
+            },
+            get rgba(){
+                return `rgba(${this.r}, ${this.g}, ${this.b}, ${this.a})`
+            },
+            get name(){
+                return hexColorNames[this.hex];
+            },
         }
 
-        constructor(red, green, blue, alpha = 1) {
-            this._red = 0
-            this._green = 0
-            this._blue = 0
-            this._alpha = 1
-            if(red == undefined || red == null) return;
+        if (typeof red == "string") {
+            var re = /^\s*#([0-9a-fA-F]{1,8})\s*$/g;
+            var rlt = re.exec(red);
+            if (rlt && rlt.length == 2) {
+                if (rlt[1].length == 1) rlt[1] = "0" + rlt[1];
+                if (rlt[1].length == 2) rlt[1] = rlt[1] + rlt[1] + rlt[1];
+                else if (rlt[1].length == 3) rlt[1] = rlt[1].split("").map(c => c+c).join("");
+                if (rlt[1].length <= 6) {
+                    for (; rlt[1].length < 6;) rlt[1] = "0" + rlt[1];
+                    for (; rlt[1].length < 8;) rlt[1] = "f" + rlt[1];
+                }
+                for (; rlt[1].length < 8;) rlt[1] = "0" + rlt[1];
 
-            if (typeof red == "string") {
-                var re = /^\s*#([0-9a-fA-F]{1,8})\s*$/g;
+                _alpha = parseInt(rlt[1].substring(0, 2), 16) / 255.0;
+                _red = parseInt(rlt[1].substring(2, 4), 16);
+                _green = parseInt(rlt[1].substring(4, 6), 16);
+                _blue = parseInt(rlt[1].substring(6), 16);
+                return rtn;
+            } else {
+                var re = /^rgba*\((\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),*\s*(\d*\.*\d*)\)$/g;
                 var rlt = re.exec(red);
-                if (rlt && rlt.length == 2) {
-                    if (rlt[1].length == 1) rlt[1] = "0" + rlt[1];
-                    if (rlt[1].length == 2) rlt[1] = rlt[1] + rlt[1] + rlt[1];
-                    else if (rlt[1].length == 3) rlt[1] = rlt[1].split("").map(c => c+c).join("");
-                    if (rlt[1].length <= 6) {
-                        for (; rlt[1].length < 6;) rlt[1] = "0" + rlt[1];
-                        for (; rlt[1].length < 8;) rlt[1] = "f" + rlt[1];
+                if (rlt && rlt.length == 5) {
+                    if(rlt[4] == "") rlt[4] = "1";
+                    for (var i = 1; i < 5; i++) {
+                        rlt[i] = parseFloat(rlt[i]);
                     }
-                    for (; rlt[1].length < 8;) rlt[1] = "0" + rlt[1];
-
-                    this._alpha = parseInt(rlt[1].substring(0, 2), 16) / 255.0;
-                    this._red = parseInt(rlt[1].substring(2, 4), 16);
-                    this._green = parseInt(rlt[1].substring(4, 6), 16);
-                    this._blue = parseInt(rlt[1].substring(6), 16);
-                    return;
+                    _red = rlt[1];
+                    _green = rlt[2];
+                    _blue = rlt[3];
+                    _alpha = rlt[4];
+                    return rtn;
                 } else {
-                    var re = /^rgba*\((\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),*\s*(\d*\.*\d*)\)$/g;
-                    var rlt = re.exec(red);
-                    if (rlt && rlt.length == 5) {
-                        if(rlt[4] == "") rlt[4] = "1";
-                        for (var i = 1; i < 5; i++) {
-                            rlt[i] = parseFloat(rlt[i]);
-                        }
-                        this._red = rlt[1];
-                        this._green = rlt[2];
-                        this._blue = rlt[3];
-                        this._alpha = rlt[4];
-                        return;
-                    } else {
-                        var clr = namedColors[red.toLowerCase()];
-                        if (clr) {
-                            this._red = clr[0];
-                            this._green = clr[1];
-                            this._blue = clr[2];
-                            this._alpha = 1;
-                            return;
-                        }
+                    var clr = namedColors[red.toLowerCase()];
+                    if (clr) {
+                        _red = clr[0];
+                        _green = clr[1];
+                        _blue = clr[2];
+                        _alpha = 1;
+                        return rtn;
                     }
                 }
             }
-
-            var t = toNumberObject(["red", "green", "blue", "alpha"], red, green, blue, alpha);
-
-            this._red = t.red;
-            this._green = t.green;
-            this._blue = t.blue;
-            this._alpha = t.alpha;
         }
 
-        get red() {
-            return this._red;
-        }
-        get r() {
-            return this._red;
-        }
-        set red(r) {
-            this._red = Color.GetColorValue(r);
-        }
-        set r(r) {
-            this.red = r;
-        }
-        get green() {
-            return this._green;
-        }
-        get g() {
-            return this._green;
-        }
-        set green(g) {
-            this._green = Color.GetColorValue(g);
-        }
-        set g(g) {
-            this.green = g;
-        }
-        get blue() {
-            return this._blue;
-        }
-        get b() {
-            return this._blue;
-        }
-        set blue(b) {
-            this._blue = Color.GetColorValue(b);
-        }
-        set b(b) {
-            this.blue = b;
-        }
-        get alpha() {
-            return this._alpha;
-        }
-        get a() {
-            return this._alpha;
-        }
-        set alpha(a) {
-            this._alpha = Color.GetColorValue(a > 1 ? 1 : a < 0 ? 0 : a);
-        }
-        set a(a) {
-            this.alpha = a;
-        }
-        equals(...other) {
-            return equalsTo(['red', 'green', 'blue', 'alpha'], this, Color.New.apply(null, other));
-        }
-        get hex(){
-            return `#${this.r.toString(16).toUpperCase().padStart(2,"0")}${this.g.toString(16).toUpperCase().padStart(2,"0")}${this.b.toString(16).toUpperCase().padStart(2,"0")}`
-        }
-        get rgb(){
-            return `rgb(${this.r}, ${this.g}, ${this.b})`
-        }
-        get rgba(){
-            return `rgb(${this.r}, ${this.g}, ${this.b}, ${this.a})`
-        }
-        get name(){
-            return hexColorNames[this.hex];
-        }
+        var t = toNumberObject(["red", "green", "blue", "alpha"], red, green, blue, alpha);
+
+        _red = t.red;
+        _green = t.green;
+        _blue = t.blue;
+        _alpha = t.alpha;
+        return rtn;
     }
 
     help.Lateral = `
-    class Lateral
+    Lateral
         represent style, color and width of a lateral line
     `
-    class Lateral {
-        constructor(width, style, color) {
-            this._lineStyle = "none"
-            this._width = new Quant(0,'px');
-            this._color = new Color(0, 0, 0, 1);
-            if(width == null || width == undefined) return;
+    function Lateral(width, style, color) {
+        var _style = "none";
+        var _width = Quant(0,'px');
+        var _color = Color(0, 0, 0, 1);
 
-            function abstractValue(str){
-                var ss = str.split(" ");
-                ss = ss.filter(v => v != "");
-                if (ss.length == 3) {
-                    for (var s of ss) {
-                        if (lineStyles[s]) style = s;
-                        else if (namedColors[s.toLowerCase()]) color = s;
-                        else if (/^#\d+[0-9A-Fa-f]*$/g.test(s)) color = s;
-                        else if (/^[\+|\-]{0,1}\d+\.*\d*[a-zA-Z]*$/g.test(s)) width = s;
-                        else if (/^rgba*\(.+\)$/g.test(s)) color = s;
-                    }
-                    return true;
+        function abstractValue(str){
+            var ss = str.split(" ");
+            ss = ss.filter(v => v != "");
+            if (ss.length == 3) {
+                for (var s of ss) {
+                    if (lineStyles[s]) style = s;
+                    else if (namedColors[s.toLowerCase()]) color = s;
+                    else if (/^#\d+[0-9A-Fa-f]*$/g.test(s)) color = s;
+                    else if (/^[\+|\-]{0,1}\d+\.*\d*[a-zA-Z]*$/g.test(s)) width = s;
+                    else if (/^rgba*\(.+\)$/g.test(s)) color = s;
                 }
-                return false;
+                return true;
             }
-
-            var processed = false;
-            if (typeof width == "string") {
-                processed = abstractValue(width);
-            }
-
-            if(!processed) {
-                abstractValue(`${width} ${style ? style : ""} ${color ? color : ""}`);
-            }
-
-            var t = toObject(['width', 'style', 'color'], width, style, color);
-            if (lineStyles[t.style]) this._lineStyle = t.style;
-            this._width = new Quant(t.width);
-            if (t.color) {
-                this._color = new Color(t.color);
-            }
+            return false;
         }
 
-        get style() {
-            return this._lineStyle;
+        var processed = false;
+        if (typeof width == "string") {
+            processed = abstractValue(width);
         }
-        get width() {
-            return this._width;
+
+        if(!processed) {
+            abstractValue(`${width} ${style ? style : ""} ${color ? color : ""}`);
         }
-        get color() {
-            return this._color;
+
+        var t = toObject(['width', 'style', 'color'], width, style, color);
+        if (lineStyles[t.style]) _style = t.style;
+        _width = Quant(t.width);
+        if (t.color) {
+            _color = Color(t.color);
         }
-        set style(s) {
-            if (lineStyles[s])
-                this._lineStyle = s;
-        }
-        set width(width) {
-            this._width = new Quant(width);
-        }
-        set color(color) {
-            this._color = Color.New(color);
-        }
-        static New(width, style, color){
-            return new Lateral(width, style, color);
-        }
-        get desc(){
-            return `${this.width.desc} ${this.style} ${this.color.name ? this.color.name: this.color.hex}`;
-        }
-        equals(width, style, color){
-            return equals(this, new Lateral(width, style, color), ['width', 'style', 'color']);
+
+        return {
+            get style() {
+                return _style;
+            },
+            get width() {
+                return _width;
+            },
+            get color() {
+                return _color;
+            },
+            set style(s) {
+                if (lineStyles[s])
+                    _style = s;
+            },
+            set width(width) {
+                _width = Quant(width);
+            },
+            set color(color) {
+                _color = Color(color);
+            },
+            get desc(){
+                return `${_width.desc} ${_style} ${_color.name ? _color.name : _color.hex}`;
+            },
+            equals(width, style, color){
+                return equals({width: _width, style: _style, color: _color}, 
+                    Lateral(width, style, color), ['width', 'style', 'color']);
+            }
         }
     }
 
     help.Border = `
-    class Border
+    Border
         represents four laterals of a rect
     `
-    class Border {
-        constructor(left, top, right, bottom){
-            this._left = this._top = this._right = this._bottom = new Lateral();
-            if(!left) return;
-            if(!(left instanceof Lateral)) {
-                var t = toObject(['left', 'top', 'right', 'bottom'], left, top, right, bottom);
-                left = t.left;
-                top = t.top;
-                right = t.right;
-                bottom = t.bottom;
-            }
-            this._left = new Lateral(left);
-            if(top) this._top = new Lateral(top)
-            else this._top = new Lateral(this._left);
-            if(right) this._right = new Lateral(right)
-            else this._right = new Lateral(this._left);
-            if(bottom) this._bottom = new Lateral(bottom)
-            else this._bottom = new Lateral(this._top);
+    function Border(left, top, right, bottom){
+        var _left;
+        var _top;
+        var _right;
+        var _bottom;
+         _left = _top = _right = _bottom = Lateral();
+
+        if(!(left instanceof Lateral)) {
+            var t = toObject(['left', 'top', 'right', 'bottom'], left, top, right, bottom);
+            left = t.left;
+            top = t.top;
+            right = t.right;
+            bottom = t.bottom;
         }
 
-        get left(){
-            return this._left;
-        }
-        get l(){
-            return this.left;
-        }
-        get top(){
-            return this._top;
-        }
-        get t(){
-            return this.top;
-        }
-        get right(){
-            return this._right;
-        }
-        get r(){
-            return this.right;
-        }
-        get bottom(){
-            return this._bottom;
-        }
-        get b(){
-            return this.bottom;
-        }
-        set left(prm){
-            this._left = new Lateral(prm);
-        }
-        set l(prm){
-            this.left = prm;
-        }
-        set top(prm){
-            this._top = new Lateral(prm);
-        }
-        set t(prm){
-            this.top = prm;
-        }
-        set right(prm){
-            this._right = new Lateral(prm);
-        }
-        set r(prm){
-            this.right = prm;
-        }
-        set bottom(prm){
-            this._bottom = new Lateral(prm);
-        }
-        set b(prm){
-            this.bottom = prm;
-        }
-        get desc(){
-            if(this._left.equals(this._top) && this._left.equals(this._right) && this._left.equals(this._bottom)){
-                return this._left.desc;
-            } else return "";
-        }
-        equals(...args){
-            var t = Border.constructor.apply(null, args);
-            return equals(this, t, ['left', 'top', 'right', 'bottom']);
-        }
-        static New(left, top, right, bottom){
-            return new Border(left, top, right, bottom);
+        if(left) _left = Lateral(left);
+        if(top) _top = Lateral(top)
+        else _top = Lateral(_left);
+        if(right) _right = Lateral(right)
+        else _right = Lateral(_left);
+        if(bottom) _bottom = Lateral(bottom)
+        else _bottom = Lateral(_top);
+
+        return {
+            get left(){
+                return _left;
+            },
+            get l(){
+                return this.left;
+            },
+            get top(){
+                return _top;
+            },
+            get t(){
+                return this.top;
+            },
+            get right(){
+                return _right;
+            },
+            get r(){
+                return this.right;
+            },
+            get bottom(){
+                return _bottom;
+            },
+            get b(){
+                return this.bottom;
+            },
+            set left(prm){
+                _left = Lateral(prm);
+            },
+            set l(prm){
+                this.left = prm;
+            },
+            set top(prm){
+                _top = Lateral(prm);
+            },
+            set t(prm){
+                this.top = prm;
+            },
+            set right(prm){
+                _right = Lateral(prm);
+            },
+            set r(prm){
+                this.right = prm;
+            },
+            set bottom(prm){
+                _bottom = Lateral(prm);
+            },
+            set b(prm){
+                this.bottom = prm;
+            },
+            get desc(){
+                if(_left.equals(_top) && _left.equals(_right) && _left.equals(_bottom)){
+                    return _left.desc;
+                } else return "";
+            },
+            equals(...args){
+                var t = Border.constructor.apply(null, args);
+                return equals({left: _left, top: _top, right: _right, bottom: _bottom}, t, ['left', 'top', 'right', 'bottom']);
+            }
         }
     }
     ////////////////////////////////////////////////////////////////////
 
     help.Page = `
-    class Page
+    Page
         represents html
         init: create main wnd attached to body
     `
-    class Page {
-        static New() {
-            var p = new Page();
-            p.init();
-            return p;
-        }
-        static IsPageValid(page) {
-            return page && page instanceof Page && page.valid;
-        }
-
-        constructor(){
-            this._idCounter = 1;
-            this._mainWnd = null;
-            this._unit = "px";
-        }
-
-        get newId() {
-            var id = this._idCounter;
-            this._idCounter++;
+    function Page() {
+        var _idCounter = 1;
+        var _unit = "px";
+        var _mainWnd = null;
+        function newId() {
+            var id = _idCounter;
+            _idCounter++;
             return id.toString();
         }
 
-        init() {
-            document.body.id = this.newId;
-            this._mainWnd = new Wnd();
-            this._mainWnd.Create(this);
-            return this;
+        class Page {
+            get newId(){
+                return newId();
+            }
+            get valid() {
+                return _mainWnd && _mainWnd.wndValid;
+            }
+            get mainWnd() {
+                return _mainWnd;
+            }
+            get width() {
+                return window.innerWidth;
+            }
+            get height() {
+                return window.innerHeight;
+            }
+            get unit() {
+                return _unit;
+            }
+            set unit(unit) {
+                if (typeof unit != 'string') return;
+                unit = unit.toLowerCase();
+                if (!units[unit]) return;
+                this._unit = unit;
+            }
+            Destroy() {
+                _idCounter = 1;
+                _mainWnd.Destroy();
+                _mainWnd = null;
+                _unit = "px"
+            }
         }
 
-        get valid() {
-            return Wnd.IsValidWnd(this.mainWnd);
+        var page = new Page();
+        page.Page = Page;
+        page.Create = Create;
+
+        function Create() {
+            if(_mainWnd && _mainWnd.IsValidWnd()) return true;
+            document.body.id = newId();
+            _mainWnd = Wnd();
+            return _mainWnd.Create(page);
         }
-        get mainWnd() {
-            return this._mainWnd;
-        }
-        get width() {
-            return window.innerWidth;
-        }
-        get height() {
-            return window.innerHeight;
-        }
-        get unit() {
-            return this._unit;
-        }
-        set unit(unit) {
-            if (typeof unit != 'string') return;
-            unit = unit.toLowerCase();
-            if (!Page.Units().includes(unit)) return;
-            this._unit = unit;
-        }
-        Destroy() {
-            this._idCounter = 1;
-            this._mainWnd.Destroy();
-            this._mainWnd = null;
-            this._unit = "px"
-        }
+
+        Create();
+        return page;
     }
 
     // base wnd class
-    class Wnd {
-        // browser view port as screen
-        // html body as mainWnd
+    function Wnd(tag = 'div') {
+        var _id = "0";
+        var _page = null;
+        var _parent = null;
+        var _children = {};
+        var _zorder = [];
+        var _tag = tag;
 
-        /////////////////////////////////
-        // static classes
-
-        // check if a wnd is valid Wnd
-        static IsValidWnd(wnd) {
-            return wnd && wnd instanceof Wnd && wnd.wndValid;
+        function GetColor(element, attr) {
+            var bc = window.getComputedStyle(element)[attr];
+            return Color(bc);
         }
-
-        ////////////////////////////////
-        // private properties
-
-        ////////////////////////////////
-        // constructor
-        // a wnd must be belong to a page
-        constructor(tag = 'div') {
-            this._id = "0";
-            this._page = null;
-            this._parent = null;
-            this._children = {};
-            this._zorder = [];
-            this._tag = tag;
+        function SetColor(element, attr, ...args) {
+            element.style[attr] = Color.apply(null, args).rgba;
         }
 
-        get page() {
-            return this._page;
-        }
-        get pageValid() {
-            return Page.IsPageValid(this._page);
-        }
-        get idValid() {
-            return (this._id.toString() === this._id) && this._id > 0;
-        }
-        get wndValid() {
-            return this._page instanceof Page && this._page != null && this.element != null;
-        }
-        get id() {
-            return this._id;
-        }
-        get element() {
-            if (!this.idValid) return null;
-            return document.getElementById(this.id);
-        }
-        get width() {
-            return new Quant(window.getComputedStyle(this.element).width);
-        }
-        get height() {
-            return new Quant(window.getComputedStyle(this.element).height);
-        }
-        get rect() {
-            var ele = this.element;
-            return new Rect({ left: ele.clientLeft, top: ele.clientTop, width: ele.clientWidth, height: ele.clientHeight });
-        }
-        get position() {
-            var ele = this.element;
-            return new Position(ele.clientLeft, ele.clientTop);
-        }
-        set width(width) {
-            var m = new Quant(width, this.page.unit);
-            this.element.style.width = m.desc;
-        }
-        set height(height) {
-            var m = new Quant(height, this.page.unit);
-            this.element.style.height = m.desc;
-        }
-        GetColor(attr) {
-            var bc = window.getComputedStyle(this.element)[attr];
-            return Color.New(bc);
-        }
-        get bgdClr() {
-            return this.GetColor("backgroundColor")
-        }
-        get txtClr() {
-            return this.GetColor("color");
-        }
-        get border() {
-
-        }
-        SetColor(attr, clr) {
-            var args = Array.from(arguments).splice(1);
-            clr = Color.New.apply(null, args);
-            this.element.style[attr] = `rgba(${clr.r}, ${clr.g}, ${clr.b}, ${clr.a})`
-        }
-        set bgdClr(clr) {
-            var args = Array.from(arguments);
-            args.unshift("backgroundColor")
-            this.SetColor.apply(this, args);
-        }
-        set txtClr(clr) {
-            var args = Array.from(arguments);
-            args.unshift("color")
-            this.SetColor.apply(this, args);
-        }
-        get bdr(){
-            var style = this.element.style;
-            return new Border(style.borderLeft, style.borderTop, style.borderRight, style.borderBottom);
-        }
-        get bdrLeft(){
-            return new Lateral(this.element.style.borderLeft);
-        }
-        get lbdr(){
-            return this.bdrLeft;
-        }
-        get bdrTop(){
-            return new Lateral(this.element.style.borderTop);
-        }
-        get tbdr(){
-            return this.bdrTop;
-        }
-        get bdrRight(){
-            return new Lateral(this.element.style.borderRight);
-        }
-        get rbdr(){
-            return this.bdrRight;
-        }
-        get bdrBottom(){
-            return new Lateral(this.element.style.borderBottom);
-        }
-        get bbdr(){
-            return this.bdrBottom;
-        }
-
-        set bdr(val){
-            var bdr = Border.New(val);
-            var style = this.element.style;
-            style.borderLeft = bdr.left.desc;
-            style.borderTop = bdr.top.desc;
-            style.borderRight = bdr.right.desc;
-            style.borderBottom = bdr.bottom.desc;
-        }
-        set bdrLeft(val){
-            this.element.style.borderLeft = new Lateral(val).desc;
-        }
-        set lbdr(val){
-            this.bdrLeft = val;
-        }
-        set bdrTop(val){
-            this.element.style.borderTop = new Lateral(val).desc;
-        }
-        set tbdr(val){
-            this.bdrTop = val;
-        }
-        set bdrRight(val){
-            this.element.style.borderRight = new Lateral(val).desc;
-        }
-        set rbdr(val){
-            this.bdrRight = val;
-        }
-        set bdrBottom(val){
-            this.element.style.borderBottom = new Lateral(val).desc;
-        }
-        set bbdr(val){
-            this.bdrBottom = val;
-        }
-
-        AddChild(child) {
-            if (this._children[child.id] != null) {
-                return false;
+        class Wnd {
+            get page() {
+                return _page;
             }
+            get idValid() {
+                return (_id.toString() === _id) && _id > 0;
+            }
+            get wndValid() {
+                return _page != null && this.element != null;
+            }
+            get id() {
+                return _id;
+            }
+            get element() {
+                return document.getElementById(this.id);
+            }
+            get width() {
+                return Quant(window.getComputedStyle(this.element).width);
+            }
+            get height() {
+                return Quant(window.getComputedStyle(this.element).height);
+            }
+            get rect() {
+                var ele = this.element;
+                return Rect({ left: ele.clientLeft, top: ele.clientTop, width: ele.clientWidth, height: ele.clientHeight });
+            }
+            get position() {
+                var ele = this.element;
+                return Position(ele.clientLeft, ele.clientTop);
+            }
+            set width(width) {
+                var m = Quant(width, this.page.unit);
+                this.element.style.width = m.desc;
+            }
+            set height(height) {
+                var m = new Quant(height, this.page.unit);
+                this.element.style.height = m.desc;
+            }
+            get bgdClr() {
+                return GetColor(this.element, "backgroundColor")
+            }
+            get txtClr() {
+                return GetColor(this.element, "color");
+            }
+            set bgdClr(clr) {
+                var args = Array.from(arguments);
+                args.unshift("backgroundColor");
+                args.unshift(this.element);
+                SetColor.apply(null, args);
+            }
+            set txtClr(clr) {
+                var args = Array.from(arguments);
+                args.unshift("color")
+                args.unshift(this.element);
+                SetColor.apply(null, args);
+            }
+            get bdr(){
+                var style = this.element.style;
+                return Border(style.borderLeft, style.borderTop, style.borderRight, style.borderBottom);
+            }
+            get bdrLeft(){
+                return Lateral(this.element.style.borderLeft);
+            }
+            get lbdr(){
+                return this.bdrLeft;
+            }
+            get bdrTop(){
+                return Lateral(this.element.style.borderTop);
+            }
+            get tbdr(){
+                return this.bdrTop;
+            }
+            get bdrRight(){
+                return Lateral(this.element.style.borderRight);
+            }
+            get rbdr(){
+                return this.bdrRight;
+            }
+            get bdrBottom(){
+                return Lateral(this.element.style.borderBottom);
+            }
+            get bbdr(){
+                return this.bdrBottom;
+            }
+            set bdr(val){
+                var bdr = Border(val);
+                var style = this.element.style;
+                style.borderLeft = bdr.left.desc;
+                style.borderTop = bdr.top.desc;
+                style.borderRight = bdr.right.desc;
+                style.borderBottom = bdr.bottom.desc;
+            }
+            set bdrLeft(val){
+                this.element.style.borderLeft = Lateral(val).desc;
+            }
+            set lbdr(val){
+                this.bdrLeft = val;
+            }
+            set bdrTop(val){
+                this.element.style.borderTop = Lateral(val).desc;
+            }
+            set tbdr(val){
+                this.bdrTop = val;
+            }
+            set bdrRight(val){
+                this.element.style.borderRight = Lateral(val).desc;
+            }
+            set rbdr(val){
+                this.bdrRight = val;
+            }
+            set bdrBottom(val){
+                this.element.style.borderBottom = Lateral(val).desc;
+            }
+            set bbdr(val){
+                this.bdrBottom = val;
+            }
+            AddChild(child) {
+                if (_children[child.id] != null) {
+                    return false;
+                }
 
-            child._parent = this;
-            this._children[child.id] = {
-                wnd: child,
-                zorder: this._zorder.push(child.id) - 1
-            };
-            return true;
-        }
-
-        DestroyChild(child) {
-            if (this._children[child.id] == null) {
+                child.parent = this;
+                _children[child.id] = {
+                    wnd: child,
+                    zorder: _zorder.push(child.id) - 1
+                };
                 return true;
             }
+            RemoveChild(child) {
+                if (_children[child.id] == null) {
+                    return true;
+                }
 
-            this._zorder.splice(this._children[child.id].zorder, 1);
-            this._children[child.id] = null;
+                _zorder.splice(_children[child.id].zorder, 1);
+                _children[child.id] = null;
 
-            return true;
-        }
-
-        SetAttributes(attributes) {
-            try {
-                if (typeof attributes != 'object' || !(attributes instanceof Object)) {
-                    if (arguments.length > 1) {
-                        if(arguments.length % 2 == 0) {
+                return true;
+            }
+            SetAttributes(attributes) {
+                try {
+                    if (typeof attributes != 'object' || !(attributes instanceof Object)) {
+                        if (arguments.length > 1) {
+                            if(arguments.length % 2 == 0) {
+                                var temp = {};
+                                for(var i = 0; i < arguments.length; i += 2) {
+                                    if(typeof arguments[i] != "string") throw new Error("Odd parameters should be strings");
+                                    temp[arguments[i]] = arguments[i + 1];
+                                }
+                                attributes = temp;
+                            } else {
+                                throw new Error("Even number of parameters required");
+                            }
+                        } else {
+                            attributes = JSON.parse(attributes);
+                            return this.SetAttributes(attributes);
+                        }
+                    } else if(attributes instanceof Array) {
+                        if(attributes.length % 2 == 0) {
                             var temp = {};
-                            for(var i = 0; i < arguments.length; i += 2) {
-                                if(typeof arguments[i] != "string") throw new Error("Odd parameters should be strings");
-                                temp[arguments[i]] = arguments[i + 1];
+                            for(var i = 0; i < attributes.length; i += 2) {
+                                if(typeof attributes[i] != "string") throw new Error("Odd parameters should be strings");
+                                temp[attributes[i]] = attributes[i + 1];
                             }
                             attributes = temp;
                         } else {
-                            throw new Error("Even number of parameters required");
+                            throw new Error("Even number of array elements required");
                         }
-                    } else {
-                        attributes = JSON.parse(attributes);
-                        return this.SetAttributes(attributes);
                     }
-                } else if(attributes instanceof Array) {
-                    if(attributes.length % 2 == 0) {
-                        var temp = {};
-                        for(var i = 0; i < attributes.length; i += 2) {
-                            if(typeof attributes[i] != "string") throw new Error("Odd parameters should be strings");
-                            temp[attributes[i]] = attributes[i + 1];
+
+                    Object.keys(attributes).forEach(attr => {
+                        var setter = this.constructor.prototype.__lookupSetter__(attr);
+                        if (setter == undefined) {
+                            log(`Attribute "${attr} is not defined in ${this.constructor.name}"`);
+                            return;
                         }
-                        attributes = temp;
-                    } else {
-                        throw new Error("Even number of array elements required");
+                        this[attr] = typeof attributes[attr] == 'function' ? attributes[attr]() : attributes[attr];
+                    });
+                } catch(e){
+                    log(e);
+                    return false;
+                }
+            }
+            onSize(event){
+                log("I know the size of the view port has been changed");
+            }
+
+            // for this base wnd class, create a "div" wnd
+            // unless parent is null, in which case set this wnd to html body
+            Create(parent) {
+                // if parent is null or undefined,
+                // set this wnd to html body
+                function isPage(){
+                    try{
+                        return parent instanceof parent.Page;
+                    } catch(error){
+                        return false;
                     }
                 }
-
-                Object.keys(attributes).forEach(attr => {
-                    var setter = this.constructor.prototype.__lookupSetter__(attr);
-                    if (setter == undefined) {
-                        log(`Attribute "${attr} is not defined in ${this.constructor.name}"`);
-                        return;
+                function isWnd(){
+                    try{
+                        return parent instanceof parent.Wnd;
+                    } catch(error){
+                        return false;
                     }
-                    this[attr] = typeof attributes[attr] == 'function' ? attributes[attr]() : attributes[attr];
+                }
+                if (isPage()) {
+                    _page = parent;
+                    _id = document.body.id.toString();
+                    _tag = "body";
+                    document.body.onresize = this.onSize;
+                } else {
+                    // this is already a valid wnd, return true
+                    if (this.wndValid) return true;
+                    if (!isWnd() || !parent.wndValid) return false;
+
+                    _page = parent.page;
+                    _id = _page.newId;
+                    var thisElement = document.createElement(_tag);
+                    thisElement.id = _id;
+
+                    thisElement.style.position = "absolute";
+                    thisElement.style.overflowX = "hidden";
+                    thisElement.style.overflowY = "hidden";
+
+                    var parentElement = document.getElementById(parent.id);
+                    parentElement.appendChild(thisElement);
+
+                    if(!parent.AddChild(this)) return false;
+                }
+
+                registerEventListeners(this);
+                return true;
+            }
+
+            get parent() {
+                return _parent;
+            }
+            set parent(parent){
+                if(_parent){
+                    _parent.RemoveChild(this);
+                }
+                _parent = parent;
+            }
+
+            Destroy() {
+                for (; _zorder.length;) {
+                    _children[_zorder[0]].wnd.Destroy();
+                }
+
+                if (!_parent) return true;
+
+                if (!_parent.RemoveChild(this)) return false;
+                _parent.element.removeChild(this.element);
+                return true;
+            }
+
+            // set position top coordination
+            set top(top){
+                let t = Quant(top, this.page.unit);
+                this.element.style.top = t.desc;
+            }
+
+            // get position top coordination
+            get top(){
+                return Quant(window.getComputedStyle(this.element).top);
+            }
+
+            // set position left coordination
+            set left(left){
+                let t = Quant(left, this.page.unit);
+                this.element.style.left = t.desc;
+            }
+
+            // get position left corrdination
+            get left(){
+                return Quant(window.getComputedStyle(this.element).left);
+            }
+
+            get right(){
+                return this.left.add(this.width);
+            }
+
+            get bottom(){
+                return this.top.add(this.height);
+            }
+
+            set right(val){
+                this.width = Quant(val).sub(this.left);
+            }
+
+            set bottom(val){
+                this.height = Quant(val).sub(this.left);
+            }
+
+            set pos(pos){
+                pos = Position(pos);
+                this.left = pos.x;
+                this.top = pos.y;
+            }
+
+            layout(options){
+                let left = 0;
+                this._children.forEach(child => {
+                    child.left = left;
+                    child.top = 0;
+                    left+=child.width;
                 });
-            } catch(e){
-                log(e);
-                return false;
+            }
+            get title() {
+                this.element.innerText;
+            }
+            set title(text) {
+                this.element.innerText = text;
             }
         }
 
-        onSize(event){
-            log("I know the size of the view port has been changed");
-        }
+        var wnd = new Wnd();
+        wnd.Wnd = Wnd;
+        return wnd;
+    }
 
-        // for this base wnd class, create a "div" wnd
-        // unless parent is null, in which case set this wnd to html body
-        Create(parent) {
-            // if parent is null or undefined,
-            // set this wnd to html body
-            if (parent instanceof Page) {
-                this._page = parent;
-                this._id = document.body.id.toString();
-                this._tag = "body";
-                document.body.onresize = this.onSize;
-            } else {
-                // this is already a valid wnd, return true
-                if (this.wndValid) return true;
-                if (!Wnd.IsValidWnd(parent)) return false;
-
-                this._page = parent.page;
-                this._id = this.page.newId;
-                var thisElement = document.createElement(this._tag);
-                thisElement.id = this._id;
-
-                thisElement.style.position = "absolute";
-                thisElement.style.overflowX = "hidden";
-                thisElement.style.overflowY = "hidden";
-
-                var parentElement = document.getElementById(parent.id);
-                parentElement.appendChild(thisElement);
-
-                if(!parent.AddChild(this)) return false;
-            }
-
-            registerEventListeners(this);
-            return true;
-        }
-
-        get parent() {
-            return this._parent;
-        }
-
-        Destroy() {
-            for (; this._zorder.length;) {
-                this._children[this._zorder[0]].wnd.Destroy();
-            }
-
-            if (!this._parent) return true;
-
-            if (!this._parent.DestroyChild(this)) return false;
-            this._parent.element.removeChild(this.element);
-            return true;
-        }
-
-        static New(wnd = Wnd) {
-            return new wnd();
-        }
-        static CreateNew(parent, wnd = Wnd) {
-            var nw = new wnd();
-            if (nw.Create(parent)) return nw;
-
-            return null;
-        }
-
-        // set position top coordination
-        set top(top){
-            let t = new Quant(top, this.page.unit);
-            this.element.style.top = t.desc;
-        }
-
-        // get position top coordination
-        get top(){
-            return new Quant(window.getComputedStyle(this.element).top);
-        }
-
-        // set position left coordination
-        set left(left){
-            let t = new Quant(left, this.page.unit);
-            this.element.style.left = t.desc;
-        }
-
-        // get position left corrdination
-        get left(){
-            return new Quant(window.getComputedStyle(this.element).left);
-        }
-
-        get right(){
-            return this.left.add(this.width);
-        }
-
-        get bottom(){
-            return this.top.add(this.height);
-        }
-
-        set right(val){
-            this.width = new Quant(val).sub(this.left);
-        }
-
-        set bottom(val){
-            this.height = new Quant(val).sub(this.left);
-        }
-
-        set pos(pos){
-            pos = new Position(pos);
-            this.left = pos.x;
-            this.top = pos.y;
-        }
-
-        layout(options){
-            let left = 0;
-            this._children.forEach(child => {
-                child.left = left;
-                child.top = 0;
-                left+=child.width;
-            });
-        }
-        get title() {
-            this.element.innerText;
-        }
-        set title(text) {
-            this.element.innerText = text;
-        }
+    Wnd.CreateNew = (parent, wndFunc = Wnd) => {
+        var wnd = wndFunc();
+        if(wnd.Create(parent)){
+            return wnd;
+        } else return null;
     }
 
     help.DropDown = `
-    class Dropdown
+    Dropdown
     `
-    class Dropdown extends Wnd{
-        constructor(){
-            super('select');
-        }
-        Create(parent, items){
-            if(!super.Create(parent)){
+    function Dropdown(){
+        var wnd = Wnd('select');
+        var superCreate = wnd.Create;
+        wnd.Create = (parent, items) => {
+            if(!superCreate.apply(wnd, [parent])){
                 return false;
             }
-            this.AddItems(items);
+
+            wnd.AddItems(items);
             return true;
         }
-        AddItems(items){}
-        AddItem(parent, item){
+        wnd.AddItems = (items) => {}
+        wnd.AddItem = (parent, item) => {
 
         }
-        static CreateNew(parent, data){
-            return CreateWnd(Dropdown, parent, data);
-        }
+
+        return wnd;
+    }
+
+    Dropdown.CreateNew = (parent, data) => {
+        return CreateWnd(Dropdown, parent, data);
     }
 
     function CreateWnd(wndClass, parent, ...args){
