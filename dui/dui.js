@@ -1817,18 +1817,24 @@ function duiFunc(window, noGlobal) {
         wnd.__defineGetter__("value", () => {
             return wnd.element.value;
         });
-        wnd.__defineGetter__("text", () => {
-            return wnd.element.text;
-        });
         wnd.__defineSetter__("value", (value) => {
             wnd.element.value = value;
+        });
+        wnd.__defineGetter__("text", () => {
+            return wnd.element.text;
         });
         wnd.__defineSetter__("text", (text) => {
             wnd.element.text = text;
         });
+        wnd.__defineGetter__("selected", () => {
+            return wnd.element.text;
+        });
+        wnd.__defineSetter__("selected", (selected) => {
+            wnd.element.selected = selected;
+        });
 
         var superCreate = wnd.Create;
-        wnd.Create = (parent, value, text) => {
+        wnd.Create = (parent, value, text, selected) => {
             if(!parent || !(parent instanceof parent.Wnd)) return false;
             if(!superCreate.apply(wnd, [parent])){
                 return false;
@@ -1837,6 +1843,7 @@ function duiFunc(window, noGlobal) {
             var t = toObject(['value', 'text', 'selected'], value, text, selected);
             wnd.value = t.value;
             wnd.text = t.text;
+            wnd.selected = selected;
             return true;
         }
 
@@ -1857,22 +1864,41 @@ function duiFunc(window, noGlobal) {
             wnd.AddItems(items);
             return true;
         }
+
+        function AddItem(parent, item){
+            if(item instanceof Array){
+                wnd.AddItem(parent, item[0], item[1], item[2]);
+            } else if(item instanceof Object){
+                wnd.AddItem(parent, item.value, item.text, item.selected);
+            } else {
+                wnd.AddItem(parent, item);
+            } 
+        }
+
+        function AddArray(parent, items){
+            for(var item of items){
+                AddItem(parent, item);
+            }
+        }
+
         wnd.AddItems = (items) => {
             if(!items || (typeof items != 'string' && !(items instanceof Object))) return;
             if(typeof items == 'string') return wnd.AddItems(JSON.parse(items));
             if(items instanceof Array){
-                for(var item of items){
-                    if(typeof item == 'string'){
-                        wnd.AddItem(wnd, item);
-                    } else if(item instanceof Array){
-                        wnd.AddItem(wnd, item[0], item[1], item[2]);
-                    } else if(item instanceof Object){
-                        wnd.AddItem(wnd, item.value, item.text, item[2]);
-                    }
-                }
-            } else{
+                AddArray(wnd, items);
+            } else {
                 Object.keys(items).forEach(key => {
                     item = items[key];
+                    if(item instanceof Object){
+                        var group = CreateWnd(DropdownGroup, wnd, key);
+                        if(item instanceof Array) {
+                            AddArray(group, item);
+                        } else {
+                            Object.keys(item).forEach(subkey => {
+                                AddItem(group, item[subkey]);
+                            });
+                        }
+                    } else wnd.AddItem(wnd, key, item)
                 });
             }
         }
@@ -1880,8 +1906,8 @@ function duiFunc(window, noGlobal) {
             return CreateWnd(DropdownGroup, wnd, name);
         }
         wnd.AddItem = (parent, ...args) => {
-            if(!(parent instanceof parent.Wnd)) {
-                args.unshift(parent);
+            if(!parent || !parent.Wnd || !(parent instanceof parent.Wnd)) {
+                if(parent) args.unshift(parent);
                 parent = wnd;
             }
             return CreateWnd(DropdownItem, parent, args)

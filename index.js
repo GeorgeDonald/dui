@@ -380,8 +380,16 @@ test('Dropdown', assert => {
     let Page = dui.Page;
 
     let p = Page();
-    let cwd = dui.CreateWnd(dui.Dropdown, p.mainWnd, {});
-    assert.NotNull(cwd);
+    let dd = dui.CreateWnd(dui.Dropdown, p.mainWnd);
+    assert.NotNull(dd);
+    let element = document.getElementById(dd.id);
+    assert.NotNull(element);
+    assert.True(element.tagName, "SELECT");
+    let ddi = dd.AddItem("Apple")
+    assert.NotNull(ddi);
+    element = document.getElementById(ddi.id);
+    assert.NotNull(element);
+    assert.True(element.tagName, "OPTION");
 });
 
 console.log("✌️✌️✌️ All tests finished successfully !!!!!! ✌️✌️✌️")
