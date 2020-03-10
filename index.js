@@ -385,6 +385,7 @@ test('Dropdown', assert => {
     let element = document.getElementById(dd.id);
     assert.NotNull(element);
     assert.True(element.tagName, "SELECT");
+
     let ddi = dd.AddItem("Apple")
     assert.NotNull(ddi);
     element = document.getElementById(ddi.id);
@@ -392,12 +393,45 @@ test('Dropdown', assert => {
     assert.True(element.tagName, "OPTION");
     assert.Equals(element.parentElement.id, dd.id);
     assert.Equals(ddi.text, "Apple");
+
     let ddi2 = dd.AddItem("Peach")
     assert.NotNull(ddi2);
     element = document.getElementById(ddi2.id);
     assert.NotNull(element);
     assert.True(element.tagName, "OPTION");
     assert.Equals(element.parentElement.id, dd.id);
+    assert.Equals(ddi2.text, "Peach");
+    assert.Equals(element.parentElement.children.length,2);
+
+    let dd2 = dui.CreateWnd(dui.Dropdown, p.mainWnd, {"Apple": "apple", "Peach": "peach"});
+    assert.NotNull(dd2);
+    element = document.getElementById(dd2.id);
+    assert.NotNull(element);
+    assert.True(element.tagName, "SELECT");
+    assert.Equals(element.children.length,2);
+    assert.Equals(element.children[0].label,"Apple");
+    assert.Equals(element.children[0].value,"apple");
+    assert.Equals(element.children[1].label,"Peach");
+    assert.Equals(element.children[1].value,"peach");
+
+    let dd3 = dui.CreateWnd(dui.Dropdown, p.mainWnd, {'Group 1': {"Apple": "apple", "Peach": "peach"}, 'Group 2': {'Pen': 'pen', "Pencil": 'pencil'}});
+    assert.NotNull(dd3);
+    element = document.getElementById(dd3.id);
+    assert.NotNull(element);
+    assert.True(element.tagName, "SELECT");
+    assert.Equals(element.children.length,2);
+    assert.Equals(element.children[0].label,"Group 1");
+    assert.Equals(element.children[0].children.length,2);
+    assert.Equals(element.children[0].children[0].label,"Apple");
+    assert.Equals(element.children[0].children[0].value,"apple");
+    assert.Equals(element.children[0].children[1].label,"Peach");
+    assert.Equals(element.children[0].children[1].value,"peach");
+    assert.Equals(element.children[1].label,"Group 2");
+    assert.Equals(element.children[1].children.length,2);
+    assert.Equals(element.children[1].children[0].label,"Pen");
+    assert.Equals(element.children[1].children[0].value,"pen");
+    assert.Equals(element.children[1].children[1].label,"Pencil");
+    assert.Equals(element.children[1].children[1].value,"pencil");
 });
 
 console.log("✌️✌️✌️ All tests finished successfully !!!!!! ✌️✌️✌️")

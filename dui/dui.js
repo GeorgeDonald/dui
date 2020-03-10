@@ -1888,7 +1888,7 @@ function duiFunc(window, noGlobal) {
                 AddArray(wnd, items);
             } else {
                 Object.keys(items).forEach(key => {
-                    item = items[key];
+                    var item = items[key];
                     if(item instanceof Object){
                         var group = CreateWnd(DropdownGroup, wnd, key);
                         if(item instanceof Array) {
