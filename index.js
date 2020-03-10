@@ -2,7 +2,7 @@ const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 const { window } = new JSDOM('<!DOCTYPE html><html><head></head><body></body></html>');
 global.document = window;
-
+//const jq = require("./jquery.js")(window);
 let dui = require("dui")(window);
 let test = dui.test;
 let document = window.document;
@@ -390,6 +390,14 @@ test('Dropdown', assert => {
     element = document.getElementById(ddi.id);
     assert.NotNull(element);
     assert.True(element.tagName, "OPTION");
+    assert.Equals(element.parentElement.id, dd.id);
+    assert.Equals(ddi.text, "Apple");
+    let ddi2 = dd.AddItem("Peach")
+    assert.NotNull(ddi2);
+    element = document.getElementById(ddi2.id);
+    assert.NotNull(element);
+    assert.True(element.tagName, "OPTION");
+    assert.Equals(element.parentElement.id, dd.id);
 });
 
 console.log("✌️✌️✌️ All tests finished successfully !!!!!! ✌️✌️✌️")

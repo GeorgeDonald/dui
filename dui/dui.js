@@ -1834,15 +1834,15 @@ function duiFunc(window, noGlobal) {
         });
 
         var superCreate = wnd.Create;
-        wnd.Create = (parent, value, text, selected) => {
+        wnd.Create = (parent, text, value, selected) => {
             if(!parent || !(parent instanceof parent.Wnd)) return false;
             if(!superCreate.apply(wnd, [parent])){
                 return false;
             }
 
-            var t = toObject(['value', 'text', 'selected'], value, text, selected);
-            wnd.value = t.value;
+            var t = toObject(['text', 'value', 'selected'], text, value, selected);
             wnd.text = t.text;
+            wnd.value = t.value;
             wnd.selected = selected;
             return true;
         }
@@ -2015,7 +2015,7 @@ function duiFunc(window, noGlobal) {
     }
     
     function createTestWnd(){
-        dui.testMainPage = Page.New();
+        dui.testMainPage = Page();
         dui.testMainWnd = dui.testMainPage.mainWnd;
         dui.testChildWnd = Wnd.CreateNew(dui.testMainWnd, Wnd);
         dui.testChildWnd.width = 300;
