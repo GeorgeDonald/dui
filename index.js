@@ -432,6 +432,18 @@ test('Dropdown', assert => {
     assert.Equals(element.children[1].children[0].value,"pen");
     assert.Equals(element.children[1].children[1].label,"Pencil");
     assert.Equals(element.children[1].children[1].value,"pencil");
+
+    dd3.AddGroup("Group 3", {'Rose': 'rose', 'Daisy': 'daisy', 'Sunflower': 'sunflower'});
+    assert.Equals(element.children.length,3);
+    assert.Equals(element.children[2].label,"Group 3");
+    assert.Equals(element.children[2].children.length,3);
+    assert.Equals(element.children[2].children[0].label,"Rose");
+    assert.Equals(element.children[2].children[0].value,"rose");
+    assert.Equals(element.children[2].children[1].label,"Daisy");
+    assert.Equals(element.children[2].children[1].value,"daisy");
+    assert.Equals(element.children[2].children[2].label,"Sunflower");
+    assert.Equals(element.children[2].children[2].value,"sunflower");
+
 });
 
 console.log("✌️✌️✌️ All tests finished successfully !!!!!! ✌️✌️✌️")

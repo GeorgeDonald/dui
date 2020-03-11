@@ -1865,45 +1865,77 @@ function duiFunc(window, noGlobal) {
             return true;
         }
 
-        function AddItem(parent, item){
-            if(item instanceof Array){
-                wnd.AddItem(parent, item[0], item[1], item[2]);
-            } else if(item instanceof Object){
-                wnd.AddItem(parent, item.value, item.text, item.selected);
+        function AddObjectItem(parent, text, data){
+            if(data instanceof Array){
+                wnd.AddItem(parent, text, data[0], data[1]);
+            } else if(data instanceof Object){
+                wnd.AddItem(parent, text, data.value, data.selected);
             } else {
-                wnd.AddItem(parent, item);
+                wnd.AddItem(parent, text, data);
             } 
+        }
+
+        function AddObjectItems(parent, item){
+            Object.keys(item).forEach(subkey => {
+                AddObjectItem(parent, subkey, item[subkey]);
+            });
         }
 
         function AddArray(parent, items){
             for(var item of items){
-                AddItem(parent, item);
+                if(item instanceof Array){
+                    wnd.AddItem(parent, item[0], item[1], item[2]);
+                } else if(item instanceof Object){
+                    wnd.AddItem(parent, item.value, item.text, item.selected);
+                } else {
+                    wnd.AddItem(parent, item);
+                } 
+            }
+        }
+
+        function AddItems(parent, items){
+            if(items instanceof Array) {
+                AddArray(parent, items);
+            } else {
+                AddObjectItems(parent, items);
             }
         }
 
         wnd.AddItems = (items) => {
             if(!items || (typeof items != 'string' && !(items instanceof Object))) return;
-            if(typeof items == 'string') return wnd.AddItems(JSON.parse(items));
-            if(items instanceof Array){
+            if(typeof items == 'string') {
+                try{
+                    wnd.AddItems(JSON.parse(items));
+                } catch(error){
+                    wnd.AddItem(wnd, items);
+                }
+            } else if(items instanceof Array){
                 AddArray(wnd, items);
             } else {
                 Object.keys(items).forEach(key => {
                     var item = items[key];
                     if(item instanceof Object){
                         var group = CreateWnd(DropdownGroup, wnd, key);
-                        if(item instanceof Array) {
-                            AddArray(group, item);
-                        } else {
-                            Object.keys(item).forEach(subkey => {
-                                AddItem(group, item[subkey]);
-                            });
-                        }
+                        AddItems(group, item);
                     } else wnd.AddItem(wnd, key, item)
                 });
             }
         }
-        wnd.AddGroup = (name) => {
-            return CreateWnd(DropdownGroup, wnd, name);
+        wnd.AddGroup = (name, items) => {
+            var group= CreateWnd(DropdownGroup, wnd, name);
+            if(items){
+                if(typeof items == 'string'){
+                    try{
+                        items = JSON.parse(items);
+                        AddItems(group, items);
+                    }catch(error){
+                        wnd.AddItem(group, items);
+                    }
+                } else {
+                    AddItems(group, items);
+                }
+            }
+            return group;
         }
         wnd.AddItem = (parent, ...args) => {
             if(!parent || !parent.Wnd || !(parent instanceof parent.Wnd)) {
