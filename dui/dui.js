@@ -1952,6 +1952,26 @@ function duiFunc(window, noGlobal) {
         return CreateWnd(Dropdown, parent, data);
     }
 
+    function Button(){
+        var wnd = Wnd('button');
+        var superCreate = wnd.Create;
+        wnd.Create = (parent, caption = 'Button', onClick = null, param = undefined) => {
+            if(onClick) {
+                wnd.onClick = (event) => {
+                    onClick(event, wnd, param);
+                }
+            }
+            
+            if(!superCreate.apply(wnd, [parent])){
+                return false;
+            }
+
+            wnd.title = caption;
+            return true;
+        }
+        return wnd;
+    }
+
     function CreateWnd(wndClass, parent, ...args){
         var wnd = new wndClass();
         args.unshift(parent);
@@ -2036,6 +2056,7 @@ function duiFunc(window, noGlobal) {
     dui.Page = Page;
     dui.Wnd = Wnd;
     dui.Dropdown = Dropdown;
+    dui.Button = Button;
     
     dui.createTestWnd = createTestWnd;
     dui.CreateWnd = CreateWnd;
