@@ -371,9 +371,26 @@ test("Page", assert => {
     assert.Equals(child1.bdr.desc, "");
     assert.True(child1.lbdr.equals(new dui.Lateral(2, 'groove', 'darkred')));
 
-    child1.Destroy();
-    assert.IsNull(document.getElementById(child1.id))
-    assert.IsNull(child1.element);
+    let child2 = Wnd.CreateNew(mainWnd, null, {width: 300, height: 430});
+    assert.NotNull(child2);
+    assert.True(child2.width.equals('300px'));
+    assert.True(child2.height.equals('430px'));
+
+    let firstChild = mainWnd.GetChild();
+    assert.Equals(child1.id, firstChild.id);
+    let secondChild = mainWnd.GetNextChild(firstChild);
+    assert.Equals(child2.id, secondChild.id);
+    let nextSibling = firstChild.GetNextSibling();
+    assert.Equals(nextSibling.id, secondChild.id);
+
+    // child1.Destroy();
+    // assert.IsNull(document.getElementById(child1.id))
+    // assert.IsNull(child1.element);
+
+    // child2.Destroy();
+    // assert.IsNull(document.getElementById(child2.id))
+    // assert.IsNull(child2.element);
+    page.Destroy();
 });
 
 test('Dropdown', assert => {
@@ -444,6 +461,19 @@ test('Dropdown', assert => {
     assert.Equals(element.children[2].children[2].label,"Sunflower");
     assert.Equals(element.children[2].children[2].value,"sunflower");
 
+    p.Destroy();
+});
+
+test('Cross', assert => {
+    let Page = dui.Page;
+    let p = Page();
+    let dd = dui.CreateWnd(dui.Cross, p.mainWnd, {width: 32, height: 32});
+    assert.NotNull(dd);
+    assert.True(dd.GetChild().lbdr.equals('1px solid black'));
+    assert.True(dd.GetChild().width.equals('16px'));
+    let stt = dd.states;
+    dd.state = stt.collapsed;
+    assert.True(dd.state, stt.collapsed);
 });
 
 console.log("✌️✌️✌️ All tests finished successfully !!!!!! ✌️✌️✌️")

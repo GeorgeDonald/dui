@@ -1262,33 +1262,43 @@ function duiFunc(window, noGlobal) {
             _color = Color(t.color);
         }
 
-        return {
+        class classLateral{
             get style() {
                 return _style;
-            },
+            }
             get width() {
                 return _width;
-            },
+            }
             get color() {
                 return _color;
-            },
+            }
             set style(s) {
                 if (lineStyles[s])
                     _style = s;
-            },
+            }
             set width(width) {
                 _width = Quant(width);
-            },
+            }
             set color(color) {
                 _color = Color(color);
-            },
+            }
             get desc(){
                 return `${_width.desc} ${_style} ${_color.name ? _color.name : _color.hex}`;
-            },
+            }
             equals(width, style, color){
                 return equals({width: _width, style: _style, color: _color}, 
                     Lateral(width, style, color), ['width', 'style', 'color']);
             }
+        }
+        var l = new classLateral();
+        l.Lateral = classLateral;
+        return l;
+    }
+    Lateral.IsLateral = (obj) => {
+        try{
+            return obj instanceof obj.Lateral;
+        } catch(error){
+            return false;
         }
     }
 
@@ -1303,7 +1313,7 @@ function duiFunc(window, noGlobal) {
         var _bottom;
          _left = _top = _right = _bottom = Lateral();
 
-        if(!(left instanceof Lateral)) {
+        if(!Lateral.IsLateral(left)) {
             var t = toObject(['left', 'top', 'right', 'bottom'], left, top, right, bottom);
             left = t.left;
             top = t.top;
@@ -1381,6 +1391,17 @@ function duiFunc(window, noGlobal) {
     }
     ////////////////////////////////////////////////////////////////////
 
+    var Layouts = {}
+    Layouts.extRowDown = (wnd, width) => {
+        var top = Quant(0);
+        for(let cw = wnd.GetChild(); cw != null; cw = wnd.GetNextChild(cw)) {
+            cw.left = 0;
+            cw.top = top;
+            cw.width = width;
+            top.add(cw.height);
+        }
+    }
+
     help.Page = `
     Page
         represents html
@@ -1407,10 +1428,10 @@ function duiFunc(window, noGlobal) {
                 return _mainWnd;
             }
             get width() {
-                return window.innerWidth;
+                return Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
             }
             get height() {
-                return window.innerHeight;
+                return Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
             }
             get unit() {
                 return _unit;
@@ -1429,16 +1450,19 @@ function duiFunc(window, noGlobal) {
             }
         }
 
+        function Create(layout = Layouts.extRowDown) {
+            if(_mainWnd && _mainWnd.IsValidWnd()) return true;
+            document.body.id = newId();
+            _mainWnd = Body();
+            if(typeof layout == 'function'){
+                _mainWnd.Layout = layout;
+            }
+            return _mainWnd.Create(page);
+        }
+
         var page = new Page();
         page.Page = Page;
         page.Create = Create;
-
-        function Create() {
-            if(_mainWnd && _mainWnd.IsValidWnd()) return true;
-            document.body.id = newId();
-            _mainWnd = Wnd();
-            return _mainWnd.Create(page);
-        }
 
         Create();
         return page;
@@ -1461,7 +1485,7 @@ function duiFunc(window, noGlobal) {
             element.style[attr] = Color.apply(null, args).rgba;
         }
 
-        class Wnd {
+        class classWnd {
             get page() {
                 return _page;
             }
@@ -1493,15 +1517,23 @@ function duiFunc(window, noGlobal) {
             }
             set width(width) {
                 var m = Quant(width, this.page.unit);
-                var changed = m.equals(this.width);
+                var changed = !m.equals(this.width);
                 if(changed){
                     this.element.style.width = m.desc;
-                    if(this.onSize)
+                    if(typeof this.onSize == 'function'){
+                        this.onSize();
+                    }
                 }
             }
             set height(height) {
                 var m = new Quant(height, this.page.unit);
-                this.element.style.height = m.desc;
+                var changed = !m.equals(this.height);
+                if(changed){
+                    this.element.style.height = m.desc;
+                    if(typeof this.onSize == 'function'){
+                        this.onSize();
+                    }
+                }
             }
             get bgdClr() {
                 return GetColor(this.element, "backgroundColor")
@@ -1593,13 +1625,34 @@ function duiFunc(window, noGlobal) {
                 };
                 return true;
             }
+            GetChild(){
+                if(_zorder.length == 0) return null;
+                return _children[_zorder[0]].wnd;
+            }
+            GetNextChild(wnd){
+                var next = null;
+                var t = _children[wnd.id];
+                if(t && t.zorder < _zorder.length - 1){
+                    next = _children[_zorder[t.zorder + 1]].wnd;
+                }
+                return next;
+            }
+            GetNextSibling(){
+                if(!_parent) return null;
+                return _parent.GetNextChild(this);
+            }
             RemoveChild(child) {
-                if (_children[child.id] == null) {
+                if (!_children[child.id]) {
                     return true;
                 }
 
+                var index = _children[child.id].zorder;
                 _zorder.splice(_children[child.id].zorder, 1);
-                _children[child.id] = null;
+                for(;index < _zorder.length; index++){
+                    _children[_zorder[index]].zorder = index;
+                }
+
+                delete _children[child.id];
 
                 return true;
             }
@@ -1647,13 +1700,10 @@ function duiFunc(window, noGlobal) {
                     return false;
                 }
             }
-            onSize(event){
-                log("I know the size of the view port has been changed");
-            }
 
             // for this base wnd class, create a "div" wnd
             // unless parent is null, in which case set this wnd to html body
-            Create(parent) {
+            Create(parent, ...attributes) {
                 // if parent is null or undefined,
                 // set this wnd to html body
                 function isPage(){
@@ -1663,22 +1713,13 @@ function duiFunc(window, noGlobal) {
                         return false;
                     }
                 }
-                function isWnd(){
-                    try{
-                        return parent instanceof parent.Wnd;
-                    } catch(error){
-                        return false;
-                    }
-                }
                 if (isPage()) {
                     _page = parent;
                     _id = document.body.id.toString();
-                    _tag = "body";
-                    document.body.onresize = this.onSize;
                 } else {
                     // this is already a valid wnd, return true
                     if (this.wndValid) return true;
-                    if (!isWnd() || !parent.wndValid) return false;
+                    if (!Wnd.IsWnd(parent) || !parent.wndValid) return false;
 
                     _page = parent.page;
                     _id = _page.newId;
@@ -1696,6 +1737,9 @@ function duiFunc(window, noGlobal) {
                 }
 
                 registerEventListeners(this);
+                if(attributes.length){
+                    this.SetAttributes.apply(this, attributes);
+                }
                 return true;
             }
 
@@ -1758,20 +1802,10 @@ function duiFunc(window, noGlobal) {
             set bottom(val){
                 this.height = Quant(val).sub(this.left);
             }
-
             set pos(pos){
                 pos = Position(pos);
                 this.left = pos.x;
                 this.top = pos.y;
-            }
-
-            layout(options){
-                let left = 0;
-                this._children.forEach(child => {
-                    child.left = left;
-                    child.top = 0;
-                    left+=child.width;
-                });
             }
             get title() {
                 this.element.innerText;
@@ -1781,16 +1815,45 @@ function duiFunc(window, noGlobal) {
             }
         }
 
-        var wnd = new Wnd();
-        wnd.Wnd = Wnd;
+        var wnd = new classWnd();
+        wnd.Wnd = classWnd;
         return wnd;
     }
 
-    Wnd.CreateNew = (parent, wndFunc = Wnd) => {
+    Wnd.CreateNew = (parent, wndFunc, ...attributes) => {
+        if(!wndFunc) wndFunc = Wnd;
         var wnd = wndFunc();
-        if(wnd.Create(parent)){
+        attributes.unshift(parent);
+        if(wnd.Create.apply(wnd, attributes)){
             return wnd;
         } else return null;
+    }
+    Wnd.IsWnd = (wnd) => {
+        try{
+            return wnd instanceof wnd.Wnd;
+        } catch(error){
+            return false;
+        }
+    }
+
+    function Body(){
+        var wnd = Wnd('body');
+        wnd.onViewPortSizeChanged = () => {
+            if(typeof wnd.Layout == "function") {
+                wnd.Layout(wnd, wnd.page.width, wnd.page.height);
+            }
+        }
+
+        var superCreate = wnd.Create;
+        wnd.Create = (parent, ...attributes) => {
+            attributes.unshift(parent);
+            if(!superCreate.apply(wnd, attributes)) return false;
+
+            document.body.onresize = wnd.onViewPortSizeChanged;
+            return true;
+        }
+
+        return wnd;
     }
 
     function DropdownGroup(){
@@ -1976,8 +2039,59 @@ function duiFunc(window, noGlobal) {
         return wnd;
     }
 
+    help.Cross = `
+    Cross wnd
+        generally used in tree view items showing lines and expanding state
+    `
+    function Cross(){
+        var wnd = Wnd();
+        var superCreate = wnd.Create;
+
+        var crossState = {noChild: 1, collapsed: 2, expanded: 3, '1': 1, '2': 2, '3': 3};
+        var currentState = crossState.noChild;
+        var line = Lateral(1, 'solid', 'black');
+        var child = [];
+
+        wnd.__defineGetter__('states', () => crossState);
+        wnd.__defineGetter__('state', () => currentState);
+        wnd.__defineSetter__('state', (state) => {
+            if(crossState[state]) {
+                currentState = crossState[state];
+                child[0].rbdr = child[1].lbdr = child[2].rbdr = child[3].lbdr = currentState == crossState.collapsed ? line : Lateral(0, 'none');
+                child[0].bbdr = child[1].bbdr = child[2].tbdr = child[3].tbdr = currentState != crossState.noChild ? line : Lateral(0, 'none');
+            }
+        });
+
+        wnd.onSize = () => {
+            var width = wnd.width.divide(2);
+            var height = wnd.height.divide(2);
+            for(var i = 0; i < 4; i++){
+                if(child[i] && child[i].wndValid) {
+                    child[i].left = Quant(width).multiply(i % 2);
+                    child[i].top = Quant(height).multiply(Math.floor(i / 2));
+                    child[i].width = width;
+                    child[i].height = height;
+                }
+            }
+        }
+
+        wnd.Create = (parent, ...attributes) => {
+            attributes.unshift(parent);
+            if(!superCreate.apply(wnd, attributes)) return false;
+
+            for(var i = 0; i < 4; i++){
+                child[i] = CreateWnd(Wnd, wnd, {bdr: line});
+            }
+            wnd.onSize();
+            wnd.state = crossState.noChild;
+            return true;
+        }
+
+        return wnd;
+    }
+    
     function CreateWnd(wndClass, parent, ...args){
-        var wnd = new wndClass();
+        var wnd = wndClass();
         args.unshift(parent);
         if(wnd.Create.apply(wnd, args)){
             return wnd;
@@ -2033,22 +2147,23 @@ function duiFunc(window, noGlobal) {
     function createTestWnd(){
         dui.testMainPage = Page();
         dui.testMainWnd = dui.testMainPage.mainWnd;
-        dui.testChildWnd = Wnd.CreateNew(dui.testMainWnd, Wnd);
-        dui.testChildWnd.width = 300;
-        dui.testChildWnd.height = 300;
-        dui.testChildWnd.bgdClr = "blue";
+        dui.testChildWnd1 = Wnd.CreateNew(dui.testMainWnd, Wnd, {height: 600, title: "Hello, World!", bgdClr: "blue", txtClr: "white", bbdr: "1px black dashed"});
+        dui.testChildWnd2 = Wnd.CreateNew(dui.testChildWnd1, Cross, {height: 32, width: 32});
     }
 
     var dui = {
         version,
+
         namedColors,
         hexColorNames,
         lineStyles,
         units,
+
         help,
         log,
         Assert,
         test,
+
         toNumber,
         swap,
         equals,
@@ -2059,6 +2174,7 @@ function duiFunc(window, noGlobal) {
         toPixels,
         convertUnit,
         metricAdd,
+
         Quant,
         Point,
         Position,
@@ -2068,12 +2184,16 @@ function duiFunc(window, noGlobal) {
         Color,
         Lateral,
         Border,
+
         Page,
         Wnd,
         Dropdown,
         Button,
-        createTestWnd,
+        Cross,
+
         CreateWnd,
+
+        createTestWnd,
     }
 
     if (!noGlobal) {
