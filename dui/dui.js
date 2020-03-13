@@ -1493,7 +1493,11 @@ function duiFunc(window, noGlobal) {
             }
             set width(width) {
                 var m = Quant(width, this.page.unit);
-                this.element.style.width = m.desc;
+                var changed = m.equals(this.width);
+                if(changed){
+                    this.element.style.width = m.desc;
+                    if(this.onSize)
+                }
             }
             set height(height) {
                 var m = new Quant(height, this.page.unit);
@@ -1982,9 +1986,6 @@ function duiFunc(window, noGlobal) {
         }
     }
 
-    var dui = function () {
-    }
-
     class Assert{
         constructor(name){
             this.name = name;
@@ -2022,44 +2023,6 @@ function duiFunc(window, noGlobal) {
         }
     }
 
-    dui.version = version;
-    dui.namedColors = namedColors;
-    dui.hexColorNames = hexColorNames;
-    dui.lineStyles = lineStyles;
-    dui.units = units;
-
-    dui.help = help;
-    dui.log = log;
-    dui.Assert = Assert;
-    dui.test = test;
-
-    dui.toNumber = toNumber;
-    dui.swap = swap;
-    dui.equals = equals;
-    dui.toObject = toObject;
-    dui.toNumberObject = toNumberObject;
-    dui.equalsTo = equalsTo;
-    dui.metric = metric;
-    dui.toPixels = toPixels;
-    dui.convertUnit = convertUnit;
-    dui.metricAdd = metricAdd;
-
-    dui.Quant = Quant;
-    dui.Point = Point;
-    dui.Position = Position;
-    dui.Size = Size;
-    dui.Quad = Quad;
-    dui.Rect = Rect;
-    dui.Color = Color;
-    dui.Lateral = Lateral;
-    dui.Border = Border;
-    dui.Page = Page;
-    dui.Wnd = Wnd;
-    dui.Dropdown = Dropdown;
-    dui.Button = Button;
-    
-    dui.createTestWnd = createTestWnd;
-    dui.CreateWnd = CreateWnd;
 
     function test(name, func){
         var assert = new Assert(name);
@@ -2074,6 +2037,43 @@ function duiFunc(window, noGlobal) {
         dui.testChildWnd.width = 300;
         dui.testChildWnd.height = 300;
         dui.testChildWnd.bgdClr = "blue";
+    }
+
+    var dui = {
+        version,
+        namedColors,
+        hexColorNames,
+        lineStyles,
+        units,
+        help,
+        log,
+        Assert,
+        test,
+        toNumber,
+        swap,
+        equals,
+        toObject,
+        toNumberObject,
+        equalsTo,
+        metric,
+        toPixels,
+        convertUnit,
+        metricAdd,
+        Quant,
+        Point,
+        Position,
+        Size,
+        Quad,
+        Rect,
+        Color,
+        Lateral,
+        Border,
+        Page,
+        Wnd,
+        Dropdown,
+        Button,
+        createTestWnd,
+        CreateWnd,
     }
 
     if (!noGlobal) {
