@@ -469,8 +469,39 @@ test('Cross', assert => {
     let p = Page();
     let dd = dui.CreateWnd(dui.Cross, p.mainWnd, {width: 32, height: 32});
     assert.NotNull(dd);
-    assert.True(dd.GetChild().lbdr.equals('1px solid black'));
-    assert.True(dd.GetChild().width.equals('16px'));
+    let childViews = [];
+    for(let cw = dd.GetChild(); cw; cw = dd.GetNextChild(cw)) {
+        childViews.push(cw);
+    }
+
+    assert.True(childViews[0].lbdr.equals('1px solid black'));
+    assert.True(childViews[0].tbdr.equals('1px solid black'));
+    assert.True(childViews[0].rbdr.width.value == 0);
+    assert.True(childViews[0].bbdr.width.value == 0);
+    assert.True(childViews[0].width.equals('16px'));
+    assert.True(childViews[0].height.equals('16px'));
+
+    assert.True(childViews[1].rbdr.equals('1px solid black'));
+    assert.True(childViews[1].tbdr.equals('1px solid black'));
+    assert.True(childViews[1].lbdr.width.value == 0);
+    assert.True(childViews[1].bbdr.width.value == 0);
+    assert.True(childViews[1].width.equals('16px'));
+    assert.True(childViews[1].height.equals('16px'));
+
+    assert.True(childViews[2].lbdr.equals('1px solid black'));
+    assert.True(childViews[2].bbdr.equals('1px solid black'));
+    assert.True(childViews[2].rbdr.width.value == 0);
+    assert.True(childViews[2].tbdr.width.value == 0);
+    assert.True(childViews[2].width.equals('16px'));
+    assert.True(childViews[2].height.equals('16px'));
+
+    assert.True(childViews[3].rbdr.equals('1px solid black'));
+    assert.True(childViews[3].bbdr.equals('1px solid black'));
+    assert.True(childViews[3].lbdr.width.value == 0);
+    assert.True(childViews[3].tbdr.width.value == 0);
+    assert.True(childViews[3].width.equals('16px'));
+    assert.True(childViews[3].height.equals('16px'));
+
     let stt = dd.states;
     dd.state = stt.collapsed;
     assert.True(dd.state, stt.collapsed);

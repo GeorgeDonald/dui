@@ -2048,17 +2048,18 @@ function duiFunc(window, noGlobal) {
         var superCreate = wnd.Create;
 
         var crossState = {noChild: 1, collapsed: 2, expanded: 3, '1': 1, '2': 2, '3': 3};
-        var currentState = crossState.noChild;
+        var currentState = 0;
         var line = Lateral(1, 'solid', 'black');
         var child = [];
 
         wnd.__defineGetter__('states', () => crossState);
         wnd.__defineGetter__('state', () => currentState);
         wnd.__defineSetter__('state', (state) => {
-            if(crossState[state]) {
+            if(crossState[state] && currentState != crossState[state]) {
                 currentState = crossState[state];
                 child[0].rbdr = child[1].lbdr = child[2].rbdr = child[3].lbdr = currentState == crossState.collapsed ? line : Lateral(0, 'none');
                 child[0].bbdr = child[1].bbdr = child[2].tbdr = child[3].tbdr = currentState != crossState.noChild ? line : Lateral(0, 'none');
+                wnd.onSize();
             }
         });
 
@@ -2069,8 +2070,8 @@ function duiFunc(window, noGlobal) {
                 if(child[i] && child[i].wndValid) {
                     child[i].left = Quant(width).multiply(i % 2);
                     child[i].top = Quant(height).multiply(Math.floor(i / 2));
-                    child[i].width = width;
-                    child[i].height = height;
+                    child[i].width = Quant(width).sub(child[i].lbdr.width).sub(child[i].rbdr.width);
+                    child[i].height = Quant(height).sub(child[i].tbdr.width).sub(child[i].bbdr.width);
                 }
             }
         }
@@ -2148,7 +2149,7 @@ function duiFunc(window, noGlobal) {
         dui.testMainPage = Page();
         dui.testMainWnd = dui.testMainPage.mainWnd;
         dui.testChildWnd1 = Wnd.CreateNew(dui.testMainWnd, Wnd, {height: 600, title: "Hello, World!", bgdClr: "blue", txtClr: "white", bbdr: "1px black dashed"});
-        dui.testChildWnd2 = Wnd.CreateNew(dui.testChildWnd1, Cross, {height: 32, width: 32});
+        dui.testChildWnd2 = Wnd.CreateNew(dui.testChildWnd1, Cross, {height: 16, width: 16});
     }
 
     var dui = {
