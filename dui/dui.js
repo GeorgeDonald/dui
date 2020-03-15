@@ -1501,6 +1501,16 @@ function duiFunc(window, noGlobal) {
             get element() {
                 return document.getElementById(this.id);
             }
+            get size(){
+                return Size(this.width, this.height);
+            }
+            set size(size){
+                this.width = size.width;
+                this.height = size.height;
+            }
+            Show(show = true){
+                this.element.style.display = show ? "inline" : "none";
+            }
             get width() {
                 return Quant(window.getComputedStyle(this.element).width);
             }
@@ -1729,6 +1739,7 @@ function duiFunc(window, noGlobal) {
                     thisElement.style.position = "absolute";
                     thisElement.style.overflowX = "hidden";
                     thisElement.style.overflowY = "hidden";
+                    thisElement.style.boxSizing = "border-box";
 
                     var parentElement = document.getElementById(parent.id);
                     parentElement.appendChild(thisElement);
@@ -2048,31 +2059,29 @@ function duiFunc(window, noGlobal) {
         var superCreate = wnd.Create;
 
         var crossState = {noChild: 1, collapsed: 2, expanded: 3, '1': 1, '2': 2, '3': 3};
-        var currentState = 0;
+        var currentState = crossState.noChild;
         var line = Lateral(1, 'solid', 'black');
-        var child = [];
+        var childFrame = null, childVertLine = null, childHorzLine = null;
 
         wnd.__defineGetter__('states', () => crossState);
         wnd.__defineGetter__('state', () => currentState);
         wnd.__defineSetter__('state', (state) => {
-            if(crossState[state] && currentState != crossState[state]) {
+            if(crossState[state]) {
                 currentState = crossState[state];
-                child[0].rbdr = child[1].lbdr = child[2].rbdr = child[3].lbdr = currentState == crossState.collapsed ? line : Lateral(0, 'none');
-                child[0].bbdr = child[1].bbdr = child[2].tbdr = child[3].tbdr = currentState != crossState.noChild ? line : Lateral(0, 'none');
-                wnd.onSize();
+                if(childFrame){
+                    childHorzLine.Show(currentState != crossState.noChild);
+                    childVertLine.Show(currentState == crossState.collapsed);
+                }
             }
         });
 
         wnd.onSize = () => {
-            var width = wnd.width.divide(2);
-            var height = wnd.height.divide(2);
-            for(var i = 0; i < 4; i++){
-                if(child[i] && child[i].wndValid) {
-                    child[i].left = Quant(width).multiply(i % 2);
-                    child[i].top = Quant(height).multiply(Math.floor(i / 2));
-                    child[i].width = Quant(width).sub(child[i].lbdr.width).sub(child[i].rbdr.width);
-                    child[i].height = Quant(height).sub(child[i].tbdr.width).sub(child[i].bbdr.width);
-                }
+            if(childFrame) {
+                var width = wnd.width;
+                var height = wnd.height;
+                childFrame.SetAttributes({bdr: line, left: 0, top: 0, width, height});
+                childHorzLine.SetAttributes({width, height: 0, tbdr: line, left: 0, top: Quant(height).divide(2).sub(Quant(line.width).divide(2))});
+                childVertLine.SetAttributes({width: 0, height, lbdr: line, left: Quant(width).divide(2).sub(Quant(line.width).divide(2)), top: 0});
             }
         }
 
@@ -2080,11 +2089,12 @@ function duiFunc(window, noGlobal) {
             attributes.unshift(parent);
             if(!superCreate.apply(wnd, attributes)) return false;
 
-            for(var i = 0; i < 4; i++){
-                child[i] = CreateWnd(Wnd, wnd, {bdr: line});
-            }
+            childFrame = CreateWnd(Wnd, wnd);
+            childHorzLine = CreateWnd(Wnd, wnd);
+            childVertLine = CreateWnd(Wnd, wnd);
+
             wnd.onSize();
-            wnd.state = crossState.noChild;
+            wnd.state = wnd.state;
             return true;
         }
 
@@ -2149,7 +2159,7 @@ function duiFunc(window, noGlobal) {
         dui.testMainPage = Page();
         dui.testMainWnd = dui.testMainPage.mainWnd;
         dui.testChildWnd1 = Wnd.CreateNew(dui.testMainWnd, Wnd, {height: 600, title: "Hello, World!", bgdClr: "blue", txtClr: "white", bbdr: "1px black dashed"});
-        dui.testChildWnd2 = Wnd.CreateNew(dui.testChildWnd1, Cross, {height: 16, width: 16});
+        dui.testChildWnd2 = Wnd.CreateNew(dui.testChildWnd1, Cross, {height: 13, width: 13});
     }
 
     var dui = {
